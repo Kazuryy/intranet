@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  hello:
+    name: Hello World
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say hello
+        run: exit 1
