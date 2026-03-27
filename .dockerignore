@@ -1,0 +1,16 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.env
+*.db
+*.sqlite3
+.pytest_cache/
+coverage.xml
+*.egg-info/
+dist/
+build/
+.DS_Store
+node_modules/

@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        FLASK_ENV: development
+    volumes:
+      - .:/app
+    environment:
+      FLASK_DEBUG: 1
+    command: flask run --host=0.0.0.0 --port=5000 --debug
