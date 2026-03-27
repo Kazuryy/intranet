@@ -1,0 +1,40 @@
+name: ✨ Feature Request
+description: Proposer une nouvelle fonctionnalité
+labels: ['enhancement', 'awaiting triage']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Décris la fonctionnalité souhaitée de manière claire et concise.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème à résoudre
+      description: Cette demande est-elle liée à un problème ? Si oui, décris-le.
+      placeholder: Je suis bloqué quand [...]
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution envisagée
+      description: Décris comment tu imagines que ça devrait fonctionner.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte additionnel
+      description: Captures d'écran, références, ou toute autre information utile.
+
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Vérification
+      options:
+        - label: J'ai vérifié que cette feature n'a pas déjà été demandée.
+          required: true
