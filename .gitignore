@@ -1,3 +1,8 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # system files
 .DS_Store
 Thumbs.db
