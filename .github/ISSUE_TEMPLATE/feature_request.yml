@@ -11,17 +11,21 @@ body:
       required: true
 
   - type: textarea
-    id: problem
+    id: behavior
     attributes:
-      label: Problème à résoudre
-      description: Cette demande est-elle liée à un problème ? Si oui, décris-le.
-      placeholder: Je suis bloqué quand [...]
+      label: Comportement attendu
+      description: Comment ça doit fonctionner concrètement ?
+    validations:
+      required: true
 
   - type: textarea
-    id: solution
+    id: acceptance
     attributes:
-      label: Solution envisagée
-      description: Décris comment tu imagines que ça devrait fonctionner.
+      label: Critères d'acceptance
+      description: Comment sait-on que la feature est terminée ?
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
     validations:
       required: true
 
@@ -29,7 +33,7 @@ body:
     id: context
     attributes:
       label: Contexte additionnel
-      description: Captures d'écran, références, ou toute autre information utile.
+      description: Maquettes, captures d'écran, références ou toute autre information utile.
 
   - type: checkboxes
     id: existing
