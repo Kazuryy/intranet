@@ -1,20 +1,20 @@
-## Quoi ?
+## Description
 
-<!-- Ce que cette PR change -->
+<!-- Décris les changements apportés et pourquoi -->
+<!-- Si cette PR corrige une issue, lie-la ici -->
 
-## Pourquoi ?
-
-<!-- La raison du changement -->
+- Fixes #XXXX
 
 ## Comment tester ?
 
-<!-- Commandes à lancer pour vérifier que ça marche -->
+<!-- Décris comment vérifier que ça fonctionne -->
 
 ```bash
-# ex:
 docker compose up -d
 pytest tests/
 ```
+
+## Captures / Logs (si applicable)
 
 ## Checklist
 
@@ -22,3 +22,5 @@ pytest tests/
 - [ ] `pytest` passe sans erreur
 - [ ] Pas de secret dans le code
 - [ ] Les nouvelles routes ont `@login_required` + `@role_required`
+- [ ] Les inputs sont validés côté serveur
+- [ ] Les formulaires ont un token CSRF
