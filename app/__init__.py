@@ -1,7 +1,11 @@
 import os
 from flask import Flask, jsonify
 from flask_login import LoginManager
+from flask_bcrypt import Bcrypt
 from .models import db
+
+
+bcrypt = Bcrypt()
 
 
 def create_app(config=None):
@@ -10,13 +14,14 @@ def create_app(config=None):
     # COnfig
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
         'DATABASE_URL', 'sqlite:///:memory:'
-        )
+    )
     app.config['SECRET_KEY'] = 'dev_secret_key'
 
     if config:
         app.config.update(config)
 
     db.init_app(app)
+    bcrypt.init_app(app)
     login_manager = LoginManager()
     login_manager.init_app(app)
 
@@ -29,4 +34,6 @@ def create_app(config=None):
     def health():
         return jsonify({"status": "ok"}), 200
 
+    from .auth import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/auth')
     return app
