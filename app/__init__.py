@@ -16,6 +16,9 @@ def create_app(config=None):
         'DATABASE_URL', 'sqlite:///:memory:'
     )
     app.config['SECRET_KEY'] = 'dev_secret_key'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
     if config:
         app.config.update(config)
@@ -24,6 +27,10 @@ def create_app(config=None):
     bcrypt.init_app(app)
     login_manager = LoginManager()
     login_manager.init_app(app)
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        return jsonify({'error': 'Authentification requise'}), 401
 
     @login_manager.user_loader
     def load_user(user_id):

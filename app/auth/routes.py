@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from flask_login import login_user, logout_user
+from flask_login import login_required, login_user, logout_user
 from . import auth_bp
 from ..models import User
 from .. import bcrypt
@@ -18,6 +18,7 @@ def login():
 
 
 @auth_bp.post('/logout')
+@login_required
 def logout():
     logout_user()
     return jsonify({'message': 'Déconnecté'}), 200
