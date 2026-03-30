@@ -108,3 +108,41 @@ def test_change_phone_unauthenticated(client):
     # non connecté => 401
     response = client.patch('/auth/profile/phone', json={'numero': '0612345678'})
     assert response.status_code == 401
+
+
+def test_contact_direction_success(client, user, direction):
+    # login, champ valide, direction existe => 201
+    client.post('/auth/login', json={
+        'username': 'testuser',
+        'password': 'password123'
+    })
+    response = client.post('/auth/profile/contact-direction', json={'champ': 'nom'})
+    assert response.status_code == 201
+
+
+def test_contact_direction_invalid_champ(client, user, direction):
+    # champ non autorisé => 400
+    client.post('/auth/login', json={
+        'username': 'testuser',
+        'password': 'password123'
+    })
+    response = client.post(
+        '/auth/profile/contact-direction', json={'champ': 'username'}
+    )
+    assert response.status_code == 400
+
+
+def test_contact_direction_no_direction(client, user):
+    # pas de direction en base => 404
+    client.post('/auth/login', json={
+        'username': 'testuser',
+        'password': 'password123'
+    })
+    response = client.post('/auth/profile/contact-direction', json={'champ': 'nom'})
+    assert response.status_code == 404
+
+
+def test_contact_direction_unauthenticated(client):
+    # non connecté => 401
+    response = client.post('/auth/profile/contact-direction', json={'champ': 'nom'})
+    assert response.status_code == 401

@@ -1,8 +1,9 @@
 import re
+from datetime import datetime, timezone
 from flask import request, jsonify
 from flask_login import current_user, login_required, login_user, logout_user
 from . import auth_bp
-from ..models import db, Information, User
+from ..models import db, Direction, Information, Mail, User
 from .. import bcrypt
 from app import limiter
 
@@ -64,3 +65,38 @@ def change_phone():
         db.session.add(Information(id_user=current_user.id, numero=int(numero)))
     db.session.commit()
     return jsonify({'message': 'Numéro mis à jour'}), 200
+
+
+@auth_bp.post('/profile/contact-direction')
+@login_required
+def contact_direction():
+    data = request.get_json()
+    champ = data.get('champ', '').strip()
+
+    allowed_champs = {'nom', 'prenom', 'adresse'}
+    if champ not in allowed_champs:
+        return jsonify({'error': 'Champ invalide'}), 400
+
+    direction = Direction.query.first()
+    if not direction:
+        return jsonify({'error': 'Aucun responsable trouvé'}), 404
+
+    objet = f'Demande de modification — {champ}'
+    contenu = (
+        f"Bonjour,\n\n"
+        f"{current_user.prenom} {current_user.nom} "
+        f"(username : {current_user.username}) "
+        f"souhaite modifier le champ « {champ} » de son profil.\n\n"
+        f"Merci de traiter cette demande."
+    )
+
+    mail = Mail(
+        id_expediteur=current_user.id,
+        id_destinataire=direction.id_user,
+        objet=objet,
+        contenu=contenu,
+        date=datetime.now(timezone.utc)
+    )
+    db.session.add(mail)
+    db.session.commit()
+    return jsonify({'message': 'Demande envoyée à la direction'}), 201
