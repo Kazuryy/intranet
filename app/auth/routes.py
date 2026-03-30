@@ -3,9 +3,11 @@ from flask_login import login_required, login_user, logout_user
 from . import auth_bp
 from ..models import User
 from .. import bcrypt
+from app import limiter
 
 
 @auth_bp.post('/login')
+@limiter.limit("5 per minute")
 def login():
     data = request.get_json()
     user = User.query.filter_by(username=data.get('username')).first()
