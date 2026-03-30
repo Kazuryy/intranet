@@ -4,11 +4,13 @@ from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 from .models import db
 
 
 bcrypt = Bcrypt()
 limiter = Limiter(get_remote_address)
+talisman = Talisman()
 
 
 def create_app(config=None):
@@ -29,6 +31,17 @@ def create_app(config=None):
     db.init_app(app)
     bcrypt.init_app(app)
     limiter.init_app(app)
+    talisman.init_app(
+        app,
+        force_https=os.environ.get('FLASK_ENV') == 'production',
+        strict_transport_security=True,
+        frame_options='DENY',
+        x_content_type_options=True,
+        content_security_policy={
+            'default-src': "'self'"
+        }
+    )
+
     login_manager = LoginManager()
     login_manager.init_app(app)
 
