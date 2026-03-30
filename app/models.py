@@ -248,6 +248,7 @@ class Evaluation(db.Model):
         db.Integer, db.ForeignKey('matiere.id', ondelete='RESTRICT'), nullable=False
     )
     note = db.Column(db.Numeric(4, 2), nullable=False)
+    note_max = db.Column(db.Numeric(4, 2), nullable=False, default=20)
     coefficient = db.Column(db.Integer, nullable=False, default=1)
     date = db.Column(db.DateTime, nullable=False)
 
