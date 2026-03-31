@@ -20,7 +20,14 @@ def create_app(config=None):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
         'DATABASE_URL', 'sqlite:///:memory:'
     )
-    app.config['SECRET_KEY'] = 'dev_secret_key'
+    flask_env = os.environ.get('FLASK_ENV', '').lower()
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        if flask_env in ('development', 'dev', 'testing', 'test'):
+            secret_key = 'dev_secret_key'
+        else:
+            raise RuntimeError('SECRET_KEY environment variable must be set in non-development environments')
+    app.config['SECRET_KEY'] = secret_key
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['PERMANENT_SESSION_LIFETIME'] = 3600
