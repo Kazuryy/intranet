@@ -253,3 +253,114 @@ def test_setup_password_too_short(client, app):
         'password': 'court'
     })
     assert response.status_code == 400
+
+
+# --- PATCH /admin/users/<id> ---
+
+def test_update_user_success(client, admin, eleve):
+    # admin modifie nom et is_active => 200
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={
+        'nom': 'Durand', 'is_active': False
+    })
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['nom'] == 'Durand'
+    assert data['is_active'] is False
+
+
+def test_update_user_invalid_type(client, admin, eleve):
+    # type invalide => 400
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={'type': 'inconnu'})
+    assert response.status_code == 400
+
+
+def test_update_user_empty_nom(client, admin, eleve):
+    # nom vide => 400
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={'nom': '  '})
+    assert response.status_code == 400
+
+
+def test_update_user_no_fields(client, admin, eleve):
+    # aucun champ modifiable => 400
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={})
+    assert response.status_code == 400
+
+
+def test_update_user_not_found(client, admin):
+    # user inexistant => 404
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch('/admin/users/9999', json={'nom': 'Test'})
+    assert response.status_code == 404
+
+
+def test_update_user_forbidden(client, admin, eleve):
+    # élève => 403
+    client.post('/auth/login', json={
+        'email': 'jean.dupont@guardiaschool.fr', 'password': 'password'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={'nom': 'Hack'})
+    assert response.status_code == 403
+
+
+def test_update_user_unauthenticated(client, eleve):
+    # non connecté => 401
+    response = client.patch(f'/admin/users/{eleve.id}', json={'nom': 'Test'})
+    assert response.status_code == 401
+
+
+# --- DELETE /admin/users/<id> ---
+
+def test_delete_user_success(client, admin, eleve):
+    # admin supprime un élève => 200
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.delete(f'/admin/users/{eleve.id}')
+    assert response.status_code == 200
+
+
+def test_delete_user_self(client, admin):
+    # admin ne peut pas se supprimer lui-même => 403
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.delete(f'/admin/users/{admin.id}')
+    assert response.status_code == 403
+
+
+def test_delete_user_not_found(client, admin):
+    # user inexistant => 404
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.delete('/admin/users/9999')
+    assert response.status_code == 404
+
+
+def test_delete_user_forbidden(client, admin, eleve):
+    # élève => 403
+    client.post('/auth/login', json={
+        'email': 'jean.dupont@guardiaschool.fr', 'password': 'password'
+    })
+    response = client.delete(f'/admin/users/{eleve.id}')
+    assert response.status_code == 403
+
+
+def test_delete_user_unauthenticated(client, eleve):
+    # non connecté => 401
+    response = client.delete(f'/admin/users/{eleve.id}')
+    assert response.status_code == 401

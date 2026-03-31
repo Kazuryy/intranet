@@ -4,8 +4,21 @@ from datetime import datetime, timedelta, timezone
 from flask import request, jsonify
 from flask_login import current_user, login_required
 from . import admin_bp
-from ..models import db, Employe, User
+from ..models import db, Employe, Log, User
 from ..decorators import role_required
+
+
+def _log(action, target_id=None):
+    db.session.add(Log(
+        user_id=current_user.id,
+        action=action,
+        target_type='user',
+        target_id=target_id,
+        ip_address=request.remote_addr,
+        user_agent=(request.user_agent.string or '')[:255],
+        created_at=datetime.now(timezone.utc)
+    ))
+
 
 ALLOWED_TYPES = {'élève', 'employé', 'parent', 'administrateur'}
 DIRECTION_TYPES = {'élève', 'parent'}
@@ -127,6 +140,9 @@ def create_user():
         setup_token_expires=expires
     )
     db.session.add(user)
+    db.session.flush()  # get user.id before commit
+
+    _log('user_created', target_id=user.id)
     db.session.commit()
 
     return jsonify({
@@ -135,3 +151,72 @@ def create_user():
         'username': username,
         'setup_link': f'/auth/setup-password?token={token}'
     }), 201
+
+
+@admin_bp.patch('/users/<int:user_id>')
+@login_required
+@role_required('administrateur')
+def update_user(user_id):
+    user = User.query.get_or_404(user_id)
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'JSON requis'}), 400
+
+    changes = []
+
+    if 'nom' in data:
+        nom = (data['nom'] or '').strip()
+        if not nom:
+            return jsonify({'error': 'nom ne peut pas être vide'}), 400
+        user.nom = nom
+        changes.append('nom')
+
+    if 'prenom' in data:
+        prenom = (data['prenom'] or '').strip()
+        if not prenom:
+            return jsonify({'error': 'prenom ne peut pas être vide'}), 400
+        user.prenom = prenom
+        changes.append('prenom')
+
+    if 'type' in data:
+        user_type = (data['type'] or '').strip()
+        if user_type not in ALLOWED_TYPES:
+            return jsonify({'error': 'Type invalide'}), 400
+        user.type = user_type
+        changes.append('type')
+
+    if 'is_active' in data:
+        if not isinstance(data['is_active'], bool):
+            return jsonify({'error': 'is_active doit être un booléen'}), 400
+        user.is_active = data['is_active']
+        changes.append('is_active')
+
+    if not changes:
+        return jsonify({'error': 'Aucun champ modifiable fourni'}), 400
+
+    _log(f'user_updated:{",".join(changes)}', target_id=user.id)
+    db.session.commit()
+
+    return jsonify({
+        'id': user.id,
+        'nom': user.nom,
+        'prenom': user.prenom,
+        'type': user.type,
+        'is_active': user.is_active
+    }), 200
+
+
+@admin_bp.delete('/users/<int:user_id>')
+@login_required
+@role_required('administrateur')
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+
+    if user.id == current_user.id:
+        return jsonify({'error': 'Impossible de supprimer son propre compte'}), 403
+
+    _log('user_deleted', target_id=user.id)
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({'message': 'Compte supprimé'}), 200
