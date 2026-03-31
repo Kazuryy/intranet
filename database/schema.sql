@@ -46,7 +46,9 @@ CREATE TABLE User (
     Username     VARCHAR(100) NOT NULL UNIQUE,
     Password     VARCHAR(255) NOT NULL,
     Mail_Interne VARCHAR(150) UNIQUE,
-    Is_Active    BOOLEAN NOT NULL DEFAULT TRUE
+    Is_Active           BOOLEAN NOT NULL DEFAULT TRUE,
+    Setup_Token         VARCHAR(100) UNIQUE,
+    Setup_Token_Expires DATETIME
 );
 
 -- ============================================================
