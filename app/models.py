@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -24,6 +25,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     mail_interne = db.Column(db.String(150), unique=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 
 
 class Information(db.Model):
@@ -33,7 +35,7 @@ class Information(db.Model):
     id_user = db.Column(
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
     )
-    numero = db.Column(db.Integer)
+    numero = db.Column(db.String(15))
     mail = db.Column(db.String(150))
     adresse = db.Column(db.String(255))
 
@@ -248,6 +250,7 @@ class Evaluation(db.Model):
         db.Integer, db.ForeignKey('matiere.id', ondelete='RESTRICT'), nullable=False
     )
     note = db.Column(db.Numeric(4, 2), nullable=False)
+    note_max = db.Column(db.Numeric(4, 2), nullable=False, default=20)
     coefficient = db.Column(db.Integer, nullable=False, default=1)
     date = db.Column(db.DateTime, nullable=False)
 
@@ -298,3 +301,22 @@ class Assiduite(db.Model):
         db.Enum('absent', 'retard', 'présent', 'excusé'), nullable=False
     )
     date = db.Column(db.DateTime, nullable=False)
+
+
+class Log(db.Model):
+    __tablename__ = 'log'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True
+    )
+    action = db.Column(db.String(100), nullable=False)
+    target_type = db.Column(db.String(50))
+    target_id = db.Column(db.Integer)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(255))
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
