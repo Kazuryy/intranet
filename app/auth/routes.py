@@ -21,7 +21,7 @@ def _log(action, user_id=None, target_type=None, target_id=None):
 
 
 @auth_bp.post('/login')
-@limiter.limit("5 per minute")
+@limiter.limit("5 per minute", error_message='{"error": "Trop de tentatives de connexion, veuillez réessayer plus tard."}')
 def login():
     data = request.get_json(silent=True)
     if not data:
