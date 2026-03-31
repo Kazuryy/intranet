@@ -96,11 +96,14 @@ docker compose down
 # Arrêter et supprimer les volumes (reset BDD)
 docker compose down -v
 
-# Lancer les tests
-pytest tests/
+# Lancer les tests + linting (commande complète)
+flake8 app/ tests/ && pytest tests/ -v
 
-# Lancer le linting
-flake8 app/
+# Lancer les tests seuls
+pytest tests/ -v
+
+# Lancer le linting seul
+flake8 app/ tests/
 ```
 
 ---
