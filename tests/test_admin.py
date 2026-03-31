@@ -1,6 +1,7 @@
 import pytest
+from datetime import datetime, timedelta, timezone
 from app import bcrypt
-from app.models import User, db
+from app.models import Employe, User, db
 
 
 @pytest.fixture
@@ -92,3 +93,163 @@ def test_list_users_unauthenticated(client):
     # non connecté => 401
     response = client.get('/admin/users')
     assert response.status_code == 401
+
+
+# --- POST /admin/users ---
+
+def test_create_user_success(client, admin):
+    # admin crée un élève => 201 + setup_link
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/admin/users', json={
+        'nom': 'Martin', 'prenom': 'Alice', 'type': 'élève'
+    })
+    assert response.status_code == 201
+    data = response.get_json()
+    assert 'setup_link' in data
+    assert data['mail_interne'] == 'alice.martin@guardiaschool.fr'
+
+
+def test_create_user_email_dedup(client, admin, eleve):
+    # jean.dupont existe déjà => jean.dupont2
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/admin/users', json={
+        'nom': 'Dupont', 'prenom': 'Jean', 'type': 'élève'
+    })
+    assert response.status_code == 201
+    assert response.get_json()['mail_interne'] == 'jean.dupont2@guardiaschool.fr'
+
+
+def test_create_user_missing_fields(client, admin):
+    # champs manquants => 400
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/admin/users', json={'nom': 'Martin'})
+    assert response.status_code == 400
+
+
+def test_create_user_invalid_type(client, admin):
+    # type inconnu => 400
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/admin/users', json={
+        'nom': 'Martin', 'prenom': 'Alice', 'type': 'inconnu'
+    })
+    assert response.status_code == 400
+
+
+def test_create_user_direction_forbidden_type(client, app):
+    # direction ne peut pas créer un admin => 403
+    with app.app_context():
+        dir_user = User(
+            type='employé', nom='Dir', prenom='Chef',
+            username='cdirecteur',
+            mail_interne='chef.dir@guardiaschool.fr',
+            password=bcrypt.generate_password_hash('dirpass').decode('utf-8')
+        )
+        db.session.add(dir_user)
+        db.session.flush()
+        db.session.add(Employe(id_user=dir_user.id, role='direction'))
+        db.session.commit()
+    client.post('/auth/login', json={
+        'email': 'chef.dir@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.post('/admin/users', json={
+        'nom': 'Martin', 'prenom': 'Alice', 'type': 'administrateur'
+    })
+    assert response.status_code == 403
+
+
+def test_create_user_forbidden_eleve(client, admin, eleve):
+    # élève => 403
+    client.post('/auth/login', json={
+        'email': 'jean.dupont@guardiaschool.fr', 'password': 'password'
+    })
+    response = client.post('/admin/users', json={
+        'nom': 'Martin', 'prenom': 'Alice', 'type': 'élève'
+    })
+    assert response.status_code == 403
+
+
+def test_create_user_unauthenticated(client):
+    # non connecté => 401
+    response = client.post('/admin/users', json={
+        'nom': 'Martin', 'prenom': 'Alice', 'type': 'élève'
+    })
+    assert response.status_code == 401
+
+
+# --- POST /auth/setup-password ---
+
+def test_setup_password_success(client, app):
+    # token valide => 200, password configuré
+    with app.app_context():
+        u = User(
+            type='élève', nom='New', prenom='User',
+            username='nuser',
+            mail_interne='user.new@guardiaschool.fr',
+            password='',
+            setup_token='validtoken123',
+            setup_token_expires=datetime.now(timezone.utc) + timedelta(hours=48)
+        )
+        db.session.add(u)
+        db.session.commit()
+    response = client.post('/auth/setup-password', json={
+        'token': 'validtoken123',
+        'password': 'MonMotDePasse1!'
+    })
+    assert response.status_code == 200
+
+
+def test_setup_password_invalid_token(client):
+    # token inexistant => 400
+    response = client.post('/auth/setup-password', json={
+        'token': 'tokeninexistant',
+        'password': 'MonMotDePasse1!'
+    })
+    assert response.status_code == 400
+
+
+def test_setup_password_expired_token(client, app):
+    # token expiré => 400
+    with app.app_context():
+        u = User(
+            type='élève', nom='Old', prenom='User',
+            username='ouser',
+            mail_interne='user.old@guardiaschool.fr',
+            password='',
+            setup_token='expiredtoken123',
+            setup_token_expires=datetime.now(timezone.utc) - timedelta(hours=1)
+        )
+        db.session.add(u)
+        db.session.commit()
+    response = client.post('/auth/setup-password', json={
+        'token': 'expiredtoken123',
+        'password': 'MonMotDePasse1!'
+    })
+    assert response.status_code == 400
+
+
+def test_setup_password_too_short(client, app):
+    # mot de passe trop court => 400
+    with app.app_context():
+        u = User(
+            type='élève', nom='Short', prenom='User',
+            username='suser',
+            mail_interne='user.short@guardiaschool.fr',
+            password='',
+            setup_token='shortpasstoken',
+            setup_token_expires=datetime.now(timezone.utc) + timedelta(hours=48)
+        )
+        db.session.add(u)
+        db.session.commit()
+    response = client.post('/auth/setup-password', json={
+        'token': 'shortpasstoken',
+        'password': 'court'
+    })
+    assert response.status_code == 400

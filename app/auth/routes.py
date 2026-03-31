@@ -4,8 +4,7 @@ from flask import request, jsonify, session
 from flask_login import current_user, login_required, login_user, logout_user
 from . import auth_bp
 from ..models import db, Direction, Information, Log, Mail, User
-from .. import bcrypt
-from .. import limiter
+from .. import bcrypt, limiter
 
 
 def _log(action, user_id=None, target_type=None, target_id=None):
@@ -145,3 +144,41 @@ def contact_direction():
     _log('contact_direction', user_id=current_user.id, target_type='direction')
     db.session.commit()
     return jsonify({'message': 'Demande envoyée à la direction'}), 201
+
+
+@auth_bp.post('/setup-password')
+def setup_password():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'JSON requis'}), 400
+
+    token = (data.get('token') or '').strip()
+    password = data.get('password') or ''
+
+    if not token or not password:
+        return jsonify({'error': 'token et password sont requis'}), 400
+
+    if len(password) < 8:
+        return jsonify(
+            {'error': 'Le mot de passe doit contenir au moins 8 caractères'}
+        ), 400
+
+    user = User.query.filter_by(setup_token=token).first()
+
+    if not user:
+        return jsonify({'error': 'Lien invalide'}), 400
+
+    now = datetime.now(timezone.utc)
+    expires = user.setup_token_expires
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+
+    if now > expires:
+        return jsonify({'error': 'Lien expiré'}), 400
+
+    user.password = bcrypt.generate_password_hash(password).decode('utf-8')
+    user.setup_token = None
+    user.setup_token_expires = None
+    _log('password_setup', user_id=user.id)
+    db.session.commit()
+    return jsonify({'message': 'Mot de passe configuré'}), 200
