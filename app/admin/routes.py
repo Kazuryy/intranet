@@ -126,12 +126,12 @@ def create_user():
     if not _can_create(user_type):
         return jsonify({'error': 'Accès refusé'}), 403
 
-    for _ in range(5):
-        mail_interne = _generate_email(prenom, nom)
-        username = _generate_username(prenom, nom)
-        token = secrets.token_urlsafe(32)
-        expires = datetime.now(timezone.utc) + timedelta(hours=48)
+    mail_interne = _generate_email(prenom, nom)
+    username = _generate_username(prenom, nom)
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now(timezone.utc) + timedelta(hours=48)
 
+    for _ in range(5):
         user = User(
             nom=nom,
             prenom=prenom,
@@ -155,6 +155,8 @@ def create_user():
             }), 201
         except IntegrityError:
             db.session.rollback()
+            mail_interne = _generate_email(prenom, nom)
+            username = _generate_username(prenom, nom)
 
     return jsonify({'error': 'Impossible de générer un identifiant unique'}), 500
 
@@ -163,7 +165,9 @@ def create_user():
 @login_required
 @role_required('administrateur')
 def update_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({'error': 'Utilisateur introuvable'}), 404
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'JSON requis'}), 400
@@ -216,7 +220,9 @@ def update_user(user_id):
 @login_required
 @role_required('administrateur')
 def delete_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({'error': 'Utilisateur introuvable'}), 404
 
     if user.id == current_user.id:
         return jsonify({'error': 'Impossible de supprimer son propre compte'}), 403
