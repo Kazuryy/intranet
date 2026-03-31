@@ -45,7 +45,8 @@ CREATE TABLE User (
     Prenom       VARCHAR(100) NOT NULL,
     Username     VARCHAR(100) NOT NULL UNIQUE,
     Password     VARCHAR(255) NOT NULL,
-    Mail_Interne VARCHAR(150) UNIQUE
+    Mail_Interne VARCHAR(150) UNIQUE,
+    Is_Active    BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- ============================================================
@@ -54,7 +55,7 @@ CREATE TABLE User (
 CREATE TABLE Information (
     ID      INT AUTO_INCREMENT PRIMARY KEY,
     ID_User INT NOT NULL,
-    Numero  INT,
+    Numero  VARCHAR(15),
     Mail    VARCHAR(150),
     Adresse VARCHAR(255),
     FOREIGN KEY (ID_User) REFERENCES User(ID) ON DELETE CASCADE
@@ -259,6 +260,21 @@ CREATE TABLE Communication (
     Date_Debut DATETIME,
     Date_Fin   DATETIME,
     FOREIGN KEY (ID_User) REFERENCES User(ID) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- Log (audit)
+-- ============================================================
+CREATE TABLE Log (
+    ID          INT AUTO_INCREMENT PRIMARY KEY,
+    ID_User     INT,
+    Action      VARCHAR(100) NOT NULL,
+    Target_Type VARCHAR(50),
+    Target_ID   INT,
+    IP_Address  VARCHAR(45),
+    User_Agent  VARCHAR(255),
+    Created_At  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_User) REFERENCES User(ID) ON DELETE SET NULL
 );
 
 -- ============================================================

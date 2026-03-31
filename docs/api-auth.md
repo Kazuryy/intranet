@@ -58,6 +58,8 @@ Modifie le mot de passe de l'utilisateur connecté.
 }
 ```
 
+**Rate limit :** 5 requêtes / minute par IP.
+
 **Validations :**
 - `current_password` vérifié contre le hash bcrypt en base
 - `new_password` : minimum 8 caractères
@@ -145,18 +147,22 @@ Fichier : `tests/test_auth.py`
 
 | Test | Route | Cas couvert |
 |---|---|---|
-| `test_login_success` | POST /login | Credentials valides → 200 |
-| `test_login_wrong_password` | POST /login | Mauvais mot de passe → 401 |
-| `test_login_unknown_user` | POST /login | Username inexistant → 401 |
-| `test_logout` | POST /logout | Session active → 200 |
-| `test_change_password_success` | PATCH /profile/password | Changement valide → 200 |
-| `test_change_password_wrong_current` | PATCH /profile/password | Mauvais mot de passe actuel → 400 |
-| `test_change_password_too_short` | PATCH /profile/password | Nouveau mot de passe < 8 chars → 400 |
-| `test_change_password_unauthenticated` | PATCH /profile/password | Non connecté → 401 |
-| `test_change_phone_success` | PATCH /profile/phone | Numéro valide → 200 |
-| `test_change_phone_invalid` | PATCH /profile/phone | Format invalide → 400 |
-| `test_change_phone_unauthenticated` | PATCH /profile/phone | Non connecté → 401 |
-| `test_contact_direction_success` | POST /profile/contact-direction | Champ valide + direction existe → 201 |
-| `test_contact_direction_invalid_champ` | POST /profile/contact-direction | Champ non autorisé → 400 |
-| `test_contact_direction_no_direction` | POST /profile/contact-direction | Pas de direction en base → 404 |
-| `test_contact_direction_unauthenticated` | POST /profile/contact-direction | Non connecté → 401 |
+| `test_login_success` | POST /auth/login | Credentials valides → 200 |
+| `test_login_wrong_password` | POST /auth/login | Mauvais mot de passe → 401 |
+| `test_login_unknown_user` | POST /auth/login | Username inexistant → 401 |
+| `test_logout` | POST /auth/logout | Session active → 200 |
+| `test_logout_unauthenticated` | POST /auth/logout | Non connecté → 401 |
+| `test_login_inactive_user` | POST /auth/login | Compte désactivé → 403 |
+| `test_login_no_json` | POST /auth/login | Pas de JSON → 400 |
+| `test_login_empty_fields` | POST /auth/login | Champs vides → 400 |
+| `test_change_password_success` | PATCH /auth/profile/password | Changement valide → 200 |
+| `test_change_password_wrong_current` | PATCH /auth/profile/password | Mauvais mot de passe actuel → 400 |
+| `test_change_password_too_short` | PATCH /auth/profile/password | Nouveau mot de passe < 8 chars → 400 |
+| `test_change_password_unauthenticated` | PATCH /auth/profile/password | Non connecté → 401 |
+| `test_change_phone_success` | PATCH /auth/profile/phone | Numéro valide → 200 |
+| `test_change_phone_invalid` | PATCH /auth/profile/phone | Format invalide → 400 |
+| `test_change_phone_unauthenticated` | PATCH /auth/profile/phone | Non connecté → 401 |
+| `test_contact_direction_success` | POST /auth/profile/contact-direction | Champ valide + direction existe → 201 |
+| `test_contact_direction_invalid_champ` | POST /auth/profile/contact-direction | Champ non autorisé → 400 |
+| `test_contact_direction_no_direction` | POST /auth/profile/contact-direction | Pas de direction en base → 404 |
+| `test_contact_direction_unauthenticated` | POST /auth/profile/contact-direction | Non connecté → 401 |

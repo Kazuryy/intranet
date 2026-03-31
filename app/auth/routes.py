@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, timezone
-from flask import request, jsonify
+from flask import request, jsonify, session
 from flask_login import current_user, login_required, login_user, logout_user
 from . import auth_bp
 from ..models import db, Direction, Information, Log, Mail, User
@@ -21,7 +21,7 @@ def _log(action, user_id=None, target_type=None, target_id=None):
 
 
 @auth_bp.post('/login')
-@limiter.limit("5 per minute", error_message='{"error": "Trop de tentatives de connexion, veuillez réessayer plus tard."}')
+@limiter.limit("5 per minute")
 def login():
     data = request.get_json(silent=True)
     if not data:
@@ -45,6 +45,7 @@ def login():
         db.session.commit()
         return jsonify({'error': 'Compte désactivé'}), 403
 
+    session.permanent = True
     login_user(user)
     _log('login_success', user_id=user.id)
     db.session.commit()

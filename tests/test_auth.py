@@ -70,6 +70,12 @@ def test_logout(client, user):
     assert response.status_code == 200
 
 
+def test_logout_unauthenticated(client):
+    # non connecté => 401
+    response = client.post('/auth/logout')
+    assert response.status_code == 401
+
+
 def test_change_password_success(client, user):
     # login, puis changement de mot de passe valide => 200
     client.post('/auth/login', json={
