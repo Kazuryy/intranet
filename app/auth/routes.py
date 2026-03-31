@@ -27,13 +27,13 @@ def login():
     if not data:
         return jsonify({'error': 'JSON requis'}), 400
 
-    username = (data.get('username') or '').strip()
+    email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
 
-    if not username or not password:
+    if not email or not password:
         return jsonify({'error': 'Identifiants requis'}), 400
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(mail_interne=email).first()
 
     if not user or not bcrypt.check_password_hash(user.password, password):
         _log('login_failure')
