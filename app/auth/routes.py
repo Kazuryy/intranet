@@ -5,7 +5,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from . import auth_bp
 from ..models import db, Direction, Information, Log, Mail, User
 from .. import bcrypt
-from app import limiter
+from .. import limiter
 
 
 def _log(action, user_id=None, target_type=None, target_id=None):
