@@ -3,6 +3,7 @@ import unicodedata
 from datetime import datetime, timedelta, timezone
 from flask import request, jsonify
 from flask_login import current_user, login_required
+from sqlalchemy.exc import IntegrityError
 from . import admin_bp
 from ..models import db, Employe, Log, User
 from ..decorators import role_required
@@ -106,6 +107,7 @@ def list_users():
 
 @admin_bp.post('/users')
 @login_required
+@role_required('administrateur', 'employé')
 def create_user():
     data = request.get_json(silent=True)
     if not data:
@@ -124,33 +126,37 @@ def create_user():
     if not _can_create(user_type):
         return jsonify({'error': 'Accès refusé'}), 403
 
-    mail_interne = _generate_email(prenom, nom)
-    username = _generate_username(prenom, nom)
-    token = secrets.token_urlsafe(32)
-    expires = datetime.now(timezone.utc) + timedelta(hours=48)
+    for _ in range(5):
+        mail_interne = _generate_email(prenom, nom)
+        username = _generate_username(prenom, nom)
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now(timezone.utc) + timedelta(hours=48)
 
-    user = User(
-        nom=nom,
-        prenom=prenom,
-        type=user_type,
-        username=username,
-        mail_interne=mail_interne,
-        password='',
-        setup_token=token,
-        setup_token_expires=expires
-    )
-    db.session.add(user)
-    db.session.flush()  # get user.id before commit
+        user = User(
+            nom=nom,
+            prenom=prenom,
+            type=user_type,
+            username=username,
+            mail_interne=mail_interne,
+            password='',
+            setup_token=token,
+            setup_token_expires=expires
+        )
+        db.session.add(user)
+        try:
+            db.session.flush()
+            _log('user_created', target_id=user.id)
+            db.session.commit()
+            return jsonify({
+                'id': user.id,
+                'mail_interne': mail_interne,
+                'username': username,
+                'setup_link': f'/auth/setup-password?token={token}'
+            }), 201
+        except IntegrityError:
+            db.session.rollback()
 
-    _log('user_created', target_id=user.id)
-    db.session.commit()
-
-    return jsonify({
-        'id': user.id,
-        'mail_interne': mail_interne,
-        'username': username,
-        'setup_link': f'/auth/setup-password?token={token}'
-    }), 201
+    return jsonify({'error': 'Impossible de générer un identifiant unique'}), 500
 
 
 @admin_bp.patch('/users/<int:user_id>')
