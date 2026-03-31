@@ -26,6 +26,40 @@ def test_login_unknown_user(client):
     assert response.status_code == 401
 
 
+def test_login_inactive_user(client, app):
+    # compte désactivé => 403
+    from app import bcrypt
+    from app.models import User, db
+    with app.app_context():
+        u = User(
+            type='élève', nom='Inactif', prenom='User',
+            username='inactif',
+            password=bcrypt.generate_password_hash('password123').decode('utf-8'),
+            is_active=False
+        )
+        db.session.add(u)
+        db.session.commit()
+    response = client.post('/auth/login', json={
+        'username': 'inactif',
+        'password': 'password123'
+    })
+    assert response.status_code == 403
+
+
+def test_login_no_json(client):
+    # pas de JSON => 400
+    response = client.post(
+        '/auth/login', data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_login_empty_fields(client):
+    # champs vides => 400
+    response = client.post('/auth/login', json={'username': '', 'password': ''})
+    assert response.status_code == 400
+
+
 def test_logout(client, user):
     # login d'abord, puis POST /auth/logout => 200
     client.post('/auth/login', json={
