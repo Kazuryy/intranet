@@ -47,7 +47,11 @@ def _generate_email(prenom, nom):
 
 
 def _generate_username(prenom, nom):
-    base = f'{_normalize(prenom)[0]}{_normalize(nom)}'
+    prenom_norm = _normalize(prenom)
+    nom_norm = _normalize(nom)
+    first = prenom_norm[0] if prenom_norm else (nom_norm[0] if nom_norm else 'u')
+    nom_norm = nom_norm or 'ser'
+    base = f'{first}{nom_norm}'
     if not User.query.filter_by(username=base).first():
         return base
     i = 2
@@ -151,12 +155,14 @@ def create_user():
                 'id': user.id,
                 'mail_interne': mail_interne,
                 'username': username,
-                'setup_link': f'/auth/setup-password?token={token}'
+                'setup_token': token
             }), 201
         except IntegrityError:
             db.session.rollback()
             mail_interne = _generate_email(prenom, nom)
             username = _generate_username(prenom, nom)
+            token = secrets.token_urlsafe(32)
+            expires = datetime.now(timezone.utc) + timedelta(hours=48)
 
     return jsonify({'error': 'Impossible de générer un identifiant unique'}), 500
 
@@ -169,7 +175,7 @@ def update_user(user_id):
     if user is None:
         return jsonify({'error': 'Utilisateur introuvable'}), 404
     data = request.get_json(silent=True)
-    if not data:
+    if data is None:
         return jsonify({'error': 'JSON requis'}), 400
 
     changes = []

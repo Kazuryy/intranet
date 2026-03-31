@@ -7,7 +7,9 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if current_user.type not in roles:
+            if not current_user.is_authenticated:
+                return jsonify({'error': 'Authentification requise'}), 401
+            if getattr(current_user, 'type', None) not in roles:
                 return jsonify({'error': 'Accès refusé'}), 403
             return f(*args, **kwargs)
         return decorated_function

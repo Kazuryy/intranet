@@ -165,7 +165,7 @@ def setup_password():
 
     user = User.query.filter_by(setup_token=token).first()
 
-    if not user:
+    if not user or not user.setup_token_expires:
         return jsonify({'error': 'Lien invalide'}), 400
 
     now = datetime.now(timezone.utc)

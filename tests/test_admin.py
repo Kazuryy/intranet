@@ -107,7 +107,7 @@ def test_create_user_success(client, admin):
     })
     assert response.status_code == 201
     data = response.get_json()
-    assert 'setup_link' in data
+    assert 'setup_token' in data
     assert data['mail_interne'] == 'alice.martin@guardiaschool.fr'
 
 
