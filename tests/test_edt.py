@@ -193,6 +193,18 @@ def test_list_cours_invalid_date(client, admin, setup):
     assert response.status_code == 400
 
 
+def test_list_cours_prof_scope(client, setup):
+    # prof voit uniquement ses propres cours
+    client.post('/auth/login', json={
+        'email': 'jean.prof@guardiaschool.fr', 'password': 'profpass'
+    })
+    response = client.get('/edt/cours')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) == 1
+    assert data[0]['prof']['id'] == setup['prof'].id
+
+
 def test_list_cours_unauthenticated(client):
     response = client.get('/edt/cours')
     assert response.status_code == 401
@@ -332,6 +344,28 @@ def test_update_cours_no_fields(client, admin, setup):
     })
     response = client.patch(f'/edt/cours/{setup["cours"].id}', json={})
     assert response.status_code == 400
+
+
+def test_update_cours_partial_debut_only(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'debut': '2026-04-07T09:00:00',
+    })
+    assert response.status_code == 200
+    assert response.get_json()['debut'].startswith('2026-04-07T09:00:00')
+
+
+def test_update_cours_partial_fin_only(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'fin': '2026-04-07T11:00:00',
+    })
+    assert response.status_code == 200
+    assert response.get_json()['fin'].startswith('2026-04-07T11:00:00')
 
 
 def test_update_cours_forbidden(client, eleve_user, setup):

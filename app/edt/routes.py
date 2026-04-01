@@ -44,7 +44,10 @@ def _cours_to_dict(c):
 
 def _parse_dt(value):
     try:
-        return datetime.fromisoformat(value)
+        dt = datetime.fromisoformat(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
     except (ValueError, TypeError):
         return None
 
@@ -109,6 +112,19 @@ def list_cours():
         query = query.filter(Cours.fin <= fin)
 
     cours = query.order_by(Cours.debut).all()
+
+    if current_user.type == 'administrateur' or (
+        current_user.type == 'employé' and is_direction()
+    ):
+        filters = []
+        if classe_id:
+            filters.append(f'classe_id={classe_id}')
+        if prof_id:
+            filters.append(f'prof_id={prof_id}')
+        if filters:
+            _log(f'cours_listed:{",".join(filters)}')
+            db.session.commit()
+
     return jsonify([_cours_to_dict(c) for c in cours]), 200
 
 
@@ -185,8 +201,10 @@ def update_cours(cours_id):
     changes = []
 
     if 'debut' in data or 'fin' in data:
-        debut = _parse_dt(data['debut']) if 'debut' in data else cours.debut
-        fin = _parse_dt(data['fin']) if 'fin' in data else cours.fin
+        def _norm(dt):
+            return dt.replace(tzinfo=timezone.utc) if dt and dt.tzinfo is None else dt
+        debut = _parse_dt(data['debut']) if 'debut' in data else _norm(cours.debut)
+        fin = _parse_dt(data['fin']) if 'fin' in data else _norm(cours.fin)
         if not debut or not fin:
             return jsonify({'error': 'Format de date invalide (ISO 8601 attendu)'}), 400
         if fin <= debut:

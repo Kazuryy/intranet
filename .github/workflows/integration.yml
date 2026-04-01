@@ -12,7 +12,7 @@ jobs:
       db:
         image: mysql:8
         env:
-          MYSQL_DATABASE: school_db
+          MYSQL_DATABASE: guardia_db
           MYSQL_USER: guardia
           MYSQL_PASSWORD: testpassword
           MYSQL_ROOT_PASSWORD: rootpassword
@@ -27,7 +27,7 @@ jobs:
     env:
       FLASK_ENV: testing
       SECRET_KEY: ci-integration-secret-not-for-prod
-      DATABASE_URL: mysql+pymysql://guardia:testpassword@127.0.0.1:3306/school_db
+      DATABASE_URL: mysql+pymysql://guardia:testpassword@127.0.0.1:3306/guardia_db
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
