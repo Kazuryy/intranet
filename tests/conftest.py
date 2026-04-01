@@ -26,6 +26,7 @@ def user(app):
             nom='Test',
             prenom='User',
             username='testuser',
+            mail_interne='user.test@guardiaschool.fr',
             password=bcrypt.generate_password_hash('password123').decode('utf-8')
         )
         db.session.add(u)
@@ -41,6 +42,7 @@ def direction(app):
             nom='Direction',
             prenom='Admin',
             username='direction',
+            mail_interne='admin.direction@guardiaschool.fr',
             password=bcrypt.generate_password_hash('dirpassword').decode('utf-8')
         )
         db.session.add(dir_user)
