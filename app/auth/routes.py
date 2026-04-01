@@ -34,7 +34,10 @@ def login():
 
     user = User.query.filter_by(mail_interne=email).first()
 
-    if not user or not bcrypt.check_password_hash(user.password, password):
+    password_ok = (
+        user and user.password and bcrypt.check_password_hash(user.password, password)
+    )
+    if not password_ok:
         _log('login_failure')
         db.session.commit()
         return jsonify({'error': 'Identifiants invalides'}), 401
@@ -147,9 +150,10 @@ def contact_direction():
 
 
 @auth_bp.post('/setup-password')
+@limiter.limit('5 per minute')
 def setup_password():
     data = request.get_json(silent=True)
-    if not data:
+    if data is None:
         return jsonify({'error': 'JSON requis'}), 400
 
     token = (data.get('token') or '').strip()

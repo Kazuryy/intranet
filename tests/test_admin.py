@@ -1,7 +1,23 @@
 import pytest
 from datetime import datetime, timedelta, timezone
 from app import bcrypt
-from app.models import Employe, User, db
+from app.models import Direction, User, db
+
+
+@pytest.fixture
+def direction_user(app):
+    with app.app_context():
+        u = User(
+            type='employé', nom='Dir', prenom='Chef',
+            username='cdirecteur',
+            mail_interne='chef.dir@guardiaschool.fr',
+            password=bcrypt.generate_password_hash('dirpass').decode('utf-8')
+        )
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(Direction(id_user=u.id))
+        db.session.commit()
+        yield u
 
 
 @pytest.fixture
@@ -143,19 +159,8 @@ def test_create_user_invalid_type(client, admin):
     assert response.status_code == 400
 
 
-def test_create_user_direction_forbidden_type(client, app):
+def test_create_user_direction_forbidden_type(client, direction_user):
     # direction ne peut pas créer un admin => 403
-    with app.app_context():
-        dir_user = User(
-            type='employé', nom='Dir', prenom='Chef',
-            username='cdirecteur',
-            mail_interne='chef.dir@guardiaschool.fr',
-            password=bcrypt.generate_password_hash('dirpass').decode('utf-8')
-        )
-        db.session.add(dir_user)
-        db.session.flush()
-        db.session.add(Employe(id_user=dir_user.id, role='direction'))
-        db.session.commit()
     client.post('/auth/login', json={
         'email': 'chef.dir@guardiaschool.fr', 'password': 'dirpass'
     })
@@ -364,3 +369,41 @@ def test_delete_user_unauthenticated(client, eleve):
     # non connecté => 401
     response = client.delete(f'/admin/users/{eleve.id}')
     assert response.status_code == 401
+
+
+# --- RBAC direction sur PATCH/DELETE ---
+
+def test_direction_can_update_eleve(client, direction_user, eleve):
+    # direction peut modifier un élève => 200
+    client.post('/auth/login', json={
+        'email': 'chef.dir@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={'is_active': False})
+    assert response.status_code == 200
+
+
+def test_direction_cannot_update_admin(client, direction_user, admin):
+    # direction ne peut pas modifier un admin => 403
+    client.post('/auth/login', json={
+        'email': 'chef.dir@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.patch(f'/admin/users/{admin.id}', json={'nom': 'Hack'})
+    assert response.status_code == 403
+
+
+def test_direction_can_delete_eleve(client, direction_user, eleve):
+    # direction peut supprimer un élève => 200
+    client.post('/auth/login', json={
+        'email': 'chef.dir@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.delete(f'/admin/users/{eleve.id}')
+    assert response.status_code == 200
+
+
+def test_direction_cannot_delete_admin(client, direction_user, admin):
+    # direction ne peut pas supprimer un admin => 403
+    client.post('/auth/login', json={
+        'email': 'chef.dir@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.delete(f'/admin/users/{admin.id}')
+    assert response.status_code == 403

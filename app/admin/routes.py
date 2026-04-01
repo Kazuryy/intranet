@@ -5,7 +5,7 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from . import admin_bp
-from ..models import db, Employe, Log, User
+from ..models import db, Direction, Log, User
 from ..decorators import role_required
 
 
@@ -62,13 +62,15 @@ def _generate_username(prenom, nom):
         i += 1
 
 
+def _is_direction():
+    return Direction.query.filter_by(id_user=current_user.id).first() is not None
+
+
 def _can_create(requested_type):
     if current_user.type == 'administrateur':
         return True
-    if current_user.type == 'employé':
-        emp = Employe.query.filter_by(id_user=current_user.id).first()
-        if emp and emp.role == 'direction':
-            return requested_type in DIRECTION_TYPES
+    if current_user.type == 'employé' and _is_direction():
+        return requested_type in DIRECTION_TYPES
     return False
 
 
@@ -82,8 +84,7 @@ def list_users():
     query = User.query
 
     if current_user.type == 'employé':
-        emp = Employe.query.filter_by(id_user=current_user.id).first()
-        if not emp or emp.role != 'direction':
+        if not _is_direction():
             return jsonify({'error': 'Accès refusé'}), 403
         query = query.filter(User.type.in_(DIRECTION_TYPES))
 
@@ -114,7 +115,7 @@ def list_users():
 @role_required('administrateur', 'employé')
 def create_user():
     data = request.get_json(silent=True)
-    if not data:
+    if data is None:
         return jsonify({'error': 'JSON requis'}), 400
 
     nom = (data.get('nom') or '').strip()
@@ -169,11 +170,15 @@ def create_user():
 
 @admin_bp.patch('/users/<int:user_id>')
 @login_required
-@role_required('administrateur')
+@role_required('administrateur', 'employé')
 def update_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
         return jsonify({'error': 'Utilisateur introuvable'}), 404
+
+    if current_user.type == 'employé':
+        if not _is_direction() or user.type not in DIRECTION_TYPES:
+            return jsonify({'error': 'Accès refusé'}), 403
     data = request.get_json(silent=True)
     if data is None:
         return jsonify({'error': 'JSON requis'}), 400
@@ -224,11 +229,15 @@ def update_user(user_id):
 
 @admin_bp.delete('/users/<int:user_id>')
 @login_required
-@role_required('administrateur')
+@role_required('administrateur', 'employé')
 def delete_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
         return jsonify({'error': 'Utilisateur introuvable'}), 404
+
+    if current_user.type == 'employé':
+        if not _is_direction() or user.type not in DIRECTION_TYPES:
+            return jsonify({'error': 'Accès refusé'}), 403
 
     if user.id == current_user.id:
         return jsonify({'error': 'Impossible de supprimer son propre compte'}), 403
