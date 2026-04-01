@@ -52,6 +52,10 @@ def _parse_dt(value):
         return None
 
 
+def _norm_dt(dt):
+    return dt.replace(tzinfo=timezone.utc) if dt and dt.tzinfo is None else dt
+
+
 ALLOWED_ETATS = {'planifié', 'en cours', 'terminé', 'annulé'}
 
 
@@ -64,6 +68,7 @@ def list_cours():
     prof_id = request.args.get('prof_id', type=int)
 
     query = Cours.query
+    direction = current_user.type == 'employé' and is_direction()
 
     # scope automatique selon le rôle
     if current_user.type == 'élève':
@@ -79,7 +84,7 @@ def list_cours():
         query = query.filter(Cours.id_classe == parent.eleve.id_classe)
 
     elif current_user.type == 'employé':
-        if is_direction():
+        if direction:
             # direction : filtres libres comme admin
             if classe_id:
                 query = query.filter(Cours.id_classe == classe_id)
@@ -113,9 +118,7 @@ def list_cours():
 
     cours = query.order_by(Cours.debut).all()
 
-    if current_user.type == 'administrateur' or (
-        current_user.type == 'employé' and is_direction()
-    ):
+    if current_user.type == 'administrateur' or direction:
         filters = []
         if classe_id:
             filters.append(f'classe_id={classe_id}')
@@ -201,10 +204,8 @@ def update_cours(cours_id):
     changes = []
 
     if 'debut' in data or 'fin' in data:
-        def _norm(dt):
-            return dt.replace(tzinfo=timezone.utc) if dt and dt.tzinfo is None else dt
-        debut = _parse_dt(data['debut']) if 'debut' in data else _norm(cours.debut)
-        fin = _parse_dt(data['fin']) if 'fin' in data else _norm(cours.fin)
+        debut = _parse_dt(data['debut']) if 'debut' in data else _norm_dt(cours.debut)
+        fin = _parse_dt(data['fin']) if 'fin' in data else _norm_dt(cours.fin)
         if not debut or not fin:
             return jsonify({'error': 'Format de date invalide (ISO 8601 attendu)'}), 400
         if fin <= debut:
