@@ -3,6 +3,11 @@ from flask import jsonify
 from flask_login import current_user
 
 
+def is_direction():
+    from .models import Direction
+    return Direction.query.filter_by(id_user=current_user.id).first() is not None
+
+
 def role_required(*roles):
     def decorator(f):
         @wraps(f)
