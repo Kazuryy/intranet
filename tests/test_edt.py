@@ -292,6 +292,20 @@ def test_create_cours_non_direction_forbidden(client, app, setup):
     assert response.status_code == 403
 
 
+def test_create_cours_direction_allowed(client, direction_user, setup):
+    client.post('/auth/login', json={
+        'email': 'dir.edt@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.post('/edt/cours', json={
+        'id_matiere': setup['matiere'].id,
+        'id_prof': setup['prof'].id,
+        'id_classe': setup['classe'].id,
+        'debut': '2026-04-08T08:00:00',
+        'fin': '2026-04-08T10:00:00',
+    })
+    assert response.status_code == 201
+
+
 def test_create_cours_eleve_forbidden(client, eleve_user, setup):
     client.post('/auth/login', json={
         'email': 'jean.dupont.edt@guardiaschool.fr', 'password': 'elevepass'
@@ -346,6 +360,16 @@ def test_update_cours_no_fields(client, admin, setup):
     assert response.status_code == 400
 
 
+def test_update_cours_direction_allowed(client, direction_user, setup):
+    client.post('/auth/login', json={
+        'email': 'dir.edt@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'etat': 'annulé'
+    })
+    assert response.status_code == 200
+
+
 def test_update_cours_partial_debut_only(client, admin, setup):
     client.post('/auth/login', json={
         'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
@@ -392,6 +416,14 @@ def test_delete_cours_not_found(client, admin):
     })
     response = client.delete('/edt/cours/9999')
     assert response.status_code == 404
+
+
+def test_delete_cours_direction_allowed(client, direction_user, setup):
+    client.post('/auth/login', json={
+        'email': 'dir.edt@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.delete(f'/edt/cours/{setup["cours"].id}')
+    assert response.status_code == 200
 
 
 def test_delete_cours_forbidden(client, eleve_user, setup):

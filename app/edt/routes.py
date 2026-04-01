@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from flask import request, jsonify
 from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
 from . import edt_bp
 from ..models import db, Classe, Cours, Eleve, Log, Matiere, Parent, Prof, Salle
 from ..decorators import is_direction, role_required
@@ -44,6 +45,8 @@ def _cours_to_dict(c):
 
 def _parse_dt(value):
     try:
+        if isinstance(value, str):
+            value = value.replace('Z', '+00:00')
         dt = datetime.fromisoformat(value)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
@@ -67,7 +70,12 @@ def list_cours():
     classe_id = request.args.get('classe_id', type=int)
     prof_id = request.args.get('prof_id', type=int)
 
-    query = Cours.query
+    query = Cours.query.options(
+        joinedload(Cours.matiere),
+        joinedload(Cours.classe),
+        joinedload(Cours.prof).joinedload(Prof.user),
+        joinedload(Cours.salle),
+    )
     direction = current_user.type == 'employé' and is_direction()
 
     # scope automatique selon le rôle
