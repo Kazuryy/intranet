@@ -1,409 +1,258 @@
 from flask import Blueprint, request, jsonify
-from models.db import get_db
+from ..models import db, User, Prof, Matiere, Classe, Eleve, Devoir, Cours, Direction
+from ..models import SessionAuth as DBSession
+from datetime import date, datetime
 import bleach
-from datetime import date
-from mysql.connector import Error
 
 
 def sanitize(text):
     return bleach.clean(text, tags=[], strip=True)
 
 
-# Rôles qui peuvent VOIR les devoirs
-ROLES_LECTURE  = ['élève', 'prof', 'direction', 'cpe', 'parent', 'administrateur']
-
-# Rôles qui peuvent CRÉER/MODIFIER/SUPPRIMER
+ROLES_LECTURE  = ['eleve', 'prof', 'direction', 'cpe', 'parent', 'administrateur']
 ROLES_ECRITURE = ['prof']
 
+TYPES_VALIDES = ['exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre']
+
+
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+
+_NORM = {'élève': 'eleve', 'employé': 'employe'}
 
 def get_user_from_suid(suid):
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True, buffered=True)
-
-    cursor.execute("""
-        SELECT u.ID, u.Type
-        FROM Session s
-        JOIN User u ON s.ID_User = u.ID
-        WHERE s.SUID = %s AND s.Expire_Le > NOW()
-    """, (suid,))
-    user = cursor.fetchone()
-
-    if not user:
-        cursor.close()
-        conn.close()
+    session = DBSession.query.filter(
+        DBSession.suid == suid,
+        DBSession.expire_le > datetime.now()
+    ).first()
+    if not session:
         return None
 
-    role = user['Type']
-    user['ID_Prof'] = None
+    user = db.session.get(User, session.id_user)
+    if not user:
+        return None
 
-    if user['Type'] == 'employé':
-        cursor.execute("SELECT ID FROM Prof WHERE ID_User = %s", (user['ID'],))
-        prof = cursor.fetchone()
+    role = _NORM.get(user.type, user.type)
+    result = {'ID': user.id, 'role': role, 'ID_Prof': None}
 
+    if role in ('employe', 'prof'):
+        prof = Prof.query.filter_by(id_user=user.id).first()
         if prof:
-            role = 'prof'
-            user['ID_Prof'] = prof['ID']
+            result['role']    = 'prof'
+            result['ID_Prof'] = prof.id
         else:
-            cursor.execute("SELECT Role FROM Direction WHERE ID_User = %s", (user['ID'],))
-            direction = cursor.fetchone()
+            direction = Direction.query.filter_by(id_user=user.id).first()
             if direction:
-                role = 'direction'
-            else:
-                cursor.execute("SELECT Role FROM Employe WHERE ID_User = %s", (user['ID'],))
-                employe = cursor.fetchone()
-                if employe and employe['Role']:
-                    role = employe['Role'].lower()
+                result['role'] = 'direction'
 
-    cursor.close()
-    conn.close()
-    user['role'] = role
-    return user
-
+    return result
 
 def verif_role(suid, roles_autorises):
     if not suid:
-        return None, (jsonify({"error": "SUID manquant"}), 401)
-
+        return None, (jsonify({'error': 'SUID manquant'}), 401)
     user = get_user_from_suid(suid)
-
     if not user:
-        return None, (jsonify({"error": "Session invalide ou expirée"}), 401)
-
+        return None, (jsonify({'error': 'Session invalide ou expiree'}), 401)
     if user['role'] not in roles_autorises:
-        return None, (jsonify({"error": "Accès non autorisé"}), 403)
-
+        return None, (jsonify({'error': 'Acces non autorise'}), 403)
     return user, None
 
+
+# ─── Blueprint ────────────────────────────────────────────────────────────────
 
 devoirs_bp = Blueprint('devoirs', __name__, url_prefix='/api/devoirs')
 
 
-###################################################################################################################
-# ROUTES EN LECTURE
-###################################################################################################################
+def _serialize(d, m, c):
+    dl = d.date_limite
+    if isinstance(dl, datetime):
+        dl = dl.date()
+    return {
+        'ID':          d.id,
+        'Type':        d.type,
+        'Date_Limite': str(dl),
+        'Consigne':    d.consigne,
+        'Matiere':     m.nom,
+        'Niveau':      c.niveau,
+        'Suffixe':     c.suffixe,
+    }
 
+
+# ─── Lecture ──────────────────────────────────────────────────────────────────
 
 @devoirs_bp.route('/', methods=['GET'])
 def get_devoirs():
     suid = request.args.get('suid')
     user, err = verif_role(suid, ROLES_LECTURE)
-    if err: return err
+    if err:
+        return err
 
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
+    q = (db.session.query(Devoir, Matiere, Classe)
+         .join(Matiere, Devoir.id_matiere == Matiere.id)
+         .join(Classe,  Devoir.id_classe  == Classe.id))
 
-        if user['role'] == 'prof':
-            cursor.execute("""
-                SELECT d.ID, d.Type, d.Date_Limite, d.Consigne,
-                       c.Niveau, c.Suffixe, m.Nom AS Matiere
-                FROM Devoir d
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                WHERE d.ID_Prof = %s
-                ORDER BY d.Date_Limite DESC
-            """, (user['ID_Prof'],))
+    if user['role'] == 'prof':
+        q = q.filter(Devoir.id_prof == user['ID_Prof'])
+    elif user['role'] == 'eleve':
+        q = (q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
+              .filter(Eleve.id_user == user['ID']))
 
-        elif user['role'] == 'élève':
-            cursor.execute("""
-                SELECT d.ID, d.Type, d.Date_Limite, d.Consigne,
-                       c.Niveau, c.Suffixe, m.Nom AS Matiere
-                FROM Devoir d
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                JOIN Eleve   e ON e.ID_Classe  = d.ID_Classe
-                WHERE e.ID_User = %s
-                ORDER BY d.Date_Limite DESC
-            """, (user['ID'],))
-
-        else:
-            cursor.execute("""
-                SELECT d.ID, d.Type, d.Date_Limite, d.Consigne,
-                       c.Niveau, c.Suffixe, m.Nom AS Matiere
-                FROM Devoir d
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                ORDER BY d.Date_Limite DESC
-            """)
-
-        devoirs = cursor.fetchall()
-        return jsonify(devoirs), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    rows = q.order_by(Devoir.date_limite.desc()).all()
+    return jsonify([_serialize(d, m, c) for d, m, c in rows]), 200
 
 
 @devoirs_bp.route('/<int:id_devoir>', methods=['GET'])
 def get_devoir(id_devoir):
     suid = request.args.get('suid')
     user, err = verif_role(suid, ROLES_LECTURE)
-    if err: return err
+    if err:
+        return err
 
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
+    q = (db.session.query(Devoir, Matiere, Classe)
+         .join(Matiere, Devoir.id_matiere == Matiere.id)
+         .join(Classe,  Devoir.id_classe  == Classe.id)
+         .filter(Devoir.id == id_devoir))
 
-        if user['role'] == 'prof':
-            cursor.execute("""
-                SELECT d.*, c.Niveau, c.Suffixe, m.Nom AS Matiere
-                FROM Devoir d
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                WHERE d.ID = %s AND d.ID_Prof = %s
-            """, (id_devoir, user['ID_Prof']))
+    if user['role'] == 'prof':
+        q = q.filter(Devoir.id_prof == user['ID_Prof'])
+    elif user['role'] == 'eleve':
+        q = (q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
+              .filter(Eleve.id_user == user['ID']))
 
-        elif user['role'] == 'élève':
-            cursor.execute("""
-                SELECT d.*, c.Niveau, c.Suffixe, m.Nom AS Matiere
-                FROM Devoir d
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                JOIN Eleve   e ON e.ID_Classe  = d.ID_Classe
-                WHERE d.ID = %s AND e.ID_User = %s
-            """, (id_devoir, user['ID']))
-
-        else:
-            cursor.execute("""
-                SELECT d.*, c.Niveau, c.Suffixe, m.Nom AS Matiere
-                FROM Devoir d
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                WHERE d.ID = %s
-            """, (id_devoir,))
-
-        devoir = cursor.fetchone()
-        if not devoir:
-            return jsonify({"error": "Devoir introuvable ou accès refusé"}), 404
-        return jsonify(devoir), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    row = q.first()
+    if not row:
+        return jsonify({'error': 'Devoir introuvable ou acces refuse'}), 404
+    d, m, c = row
+    return jsonify(_serialize(d, m, c)), 200
 
 
 @devoirs_bp.route('/tri/a_venir', methods=['GET'])
 def get_devoirs_a_venir():
     suid = request.args.get('suid')
     user, err = verif_role(suid, ROLES_LECTURE)
-    if err: return err
+    if err:
+        return err
 
-    conn = None
-    cursor = None
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        aujourd_hui = date.today()
+    aujourd_hui = datetime.combine(date.today(), datetime.min.time())
 
-        if user['role'] == 'prof':
-            cursor.execute("""
-                SELECT d.ID, d.Type, d.Date_Limite, d.Consigne,
-                       m.Nom AS Matiere, c.Niveau, c.Suffixe
-                FROM Devoir d
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                WHERE d.ID_Prof = %s AND d.Date_Limite > %s
-                ORDER BY d.Date_Limite ASC
-            """, (user['ID_Prof'], aujourd_hui))
+    q = (db.session.query(Devoir, Matiere, Classe)
+         .join(Matiere, Devoir.id_matiere == Matiere.id)
+         .join(Classe,  Devoir.id_classe  == Classe.id)
+         .filter(Devoir.date_limite > aujourd_hui))
 
-        elif user['role'] == 'élève':
-            cursor.execute("""
-                SELECT d.ID, d.Type, d.Date_Limite, d.Consigne,
-                       m.Nom AS Matiere, c.Niveau, c.Suffixe
-                FROM Devoir d
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                JOIN Eleve   e ON e.ID_Classe  = d.ID_Classe
-                WHERE e.ID_User = %s AND d.Date_Limite > %s
-                ORDER BY d.Date_Limite ASC
-            """, (user['ID'], aujourd_hui))
+    if user['role'] == 'prof':
+        q = q.filter(Devoir.id_prof == user['ID_Prof'])
+    elif user['role'] == 'eleve':
+        q = (q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
+              .filter(Eleve.id_user == user['ID']))
 
-        else:
-            cursor.execute("""
-                SELECT d.ID, d.Type, d.Date_Limite, d.Consigne,
-                       m.Nom AS Matiere, c.Niveau, c.Suffixe
-                FROM Devoir d
-                JOIN Matiere m ON d.ID_Matiere = m.ID
-                JOIN Classe  c ON d.ID_Classe  = c.ID
-                WHERE d.Date_Limite > %s
-                ORDER BY d.Date_Limite ASC
-            """, (aujourd_hui,))
-
-        devoirs = cursor.fetchall()
-        return jsonify(devoirs), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    rows = q.order_by(Devoir.date_limite.asc()).all()
+    return jsonify([_serialize(d, m, c) for d, m, c in rows]), 200
 
 
-###################################################################################################################
-# ROUTES EN ÉCRITURE (prof uniquement)
-###################################################################################################################
-
+# ─── Écriture ─────────────────────────────────────────────────────────────────
 
 @devoirs_bp.route('/creer', methods=['POST'])
 def create_devoir():
     data = request.get_json() or {}
     user, err = verif_role(data.get('suid'), ROLES_ECRITURE)
-    if err: return err
+    if err:
+        return err
 
-    required = ['id_classe', 'id_matiere', 'type', 'date_limite', 'consigne']
-    for field in required:
+    for field in ['id_classe', 'id_matiere', 'type', 'date_limite', 'consigne']:
         if field not in data:
-            return jsonify({"error": f"Champ manquant : {field}"}), 400
+            return jsonify({'error': f'Champ manquant : {field}', 'consigne': 'requis'}), 400
 
-    types_valides = ['exercice', 'soutenance', 'exposé', 'contrôle', 'autre']
-    if data['type'] not in types_valides:
-        return jsonify({"error": f"Type invalide. Valeurs acceptées : {types_valides}"}), 400
+    if data['type'] not in TYPES_VALIDES:
+        return jsonify({'error': f"Type invalide. Valeurs acceptees : {TYPES_VALIDES}"}), 400
 
-    data['consigne'] = sanitize(data['consigne'])
-    data['type']     = sanitize(data['type'])
+    consigne = sanitize(data['consigne'])
+    type_    = sanitize(data['type'])
 
-    conn = None
-    cursor = None
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO Devoir (ID_Classe, ID_Matiere, Type, Date_Limite, Consigne, ID_Prof)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (data['id_classe'], data['id_matiere'], data['type'], data['date_limite'], data['consigne'], user['ID_Prof']))
-        conn.commit()
-        new_id = cursor.lastrowid
-        return jsonify({"message": "Devoir créé", "id": new_id}), 201
+    dl = data['date_limite']
+    if isinstance(dl, str):
+        dl = datetime.combine(datetime.strptime(dl, '%Y-%m-%d').date(), datetime.min.time())
 
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    d = Devoir(
+        id_classe=data['id_classe'],
+        id_matiere=data['id_matiere'],
+        id_prof=user['ID_Prof'],
+        type=type_,
+        date_limite=dl,
+        consigne=consigne,
+    )
+    db.session.add(d)
+    db.session.commit()
+    return jsonify({'message': 'Devoir cree', 'id': d.id}), 201
 
 
 @devoirs_bp.route('/modifier/<int:id_devoir>', methods=['PUT'])
 def update_devoir(id_devoir):
     data = request.get_json() or {}
     user, err = verif_role(data.get('suid'), ROLES_ECRITURE)
-    if err: return err
+    if err:
+        return err
 
-    if 'consigne' in data:
-        data['consigne'] = sanitize(data['consigne'])
-    if 'type' in data:
-        data['type'] = sanitize(data['type'])
+    d = Devoir.query.filter_by(id=id_devoir, id_prof=user['ID_Prof']).first()
+    if not d:
+        return jsonify({'error': 'Devoir introuvable ou acces refuse'}), 403
 
-    conn = None
-    cursor = None
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT ID FROM Devoir WHERE ID = %s AND ID_Prof = %s", (id_devoir, user['ID_Prof']))
-        if not cursor.fetchone():
-            return jsonify({"error": "Devoir introuvable ou accès refusé"}), 403
+    champs = ['id_classe', 'id_matiere', 'type', 'date_limite', 'consigne']
+    updates = {k: data[k] for k in champs if k in data}
+    if not updates:
+        return jsonify({'error': 'Aucun champ a modifier'}), 400
 
-        fields = ['id_classe', 'id_matiere', 'type', 'date_limite', 'consigne']
-        updates = {k: data[k] for k in fields if k in data}
-        if not updates:
-            return jsonify({"error": "Aucun champ à modifier"}), 400
+    for k, v in updates.items():
+        if k in ('consigne', 'type'):
+            v = sanitize(v)
+        setattr(d, k, v)
 
-        set_clause = ", ".join([f"{k} = %s" for k in updates.keys()])
-        values = list(updates.values()) + [id_devoir]
-        cursor.execute(f"UPDATE Devoir SET {set_clause} WHERE ID = %s", values)
-        conn.commit()
-        return jsonify({"message": "Devoir mis à jour"}), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    db.session.commit()
+    return jsonify({'message': 'Devoir mis a jour'}), 200
 
 
 @devoirs_bp.route('/supprimer/<int:id_devoir>', methods=['DELETE'])
 def delete_devoir(id_devoir):
-    suid = request.args.get('suid')
+    # suid accepté en JSON body OU en query param
+    data = request.get_json(silent=True) or {}
+    suid = data.get('suid') or request.args.get('suid')
     user, err = verif_role(suid, ROLES_ECRITURE)
-    if err: return err
+    if err:
+        return err
 
-    conn = None
-    cursor = None
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT ID FROM Devoir WHERE ID = %s AND ID_Prof = %s", (id_devoir, user['ID_Prof']))
-        if not cursor.fetchone():
-            return jsonify({"error": "Devoir introuvable ou accès refusé"}), 403
+    d = Devoir.query.filter_by(id=id_devoir, id_prof=user['ID_Prof']).first()
+    if not d:
+        return jsonify({'error': 'Devoir introuvable ou acces refuse'}), 403
 
-        cursor.execute("DELETE FROM Devoir WHERE ID = %s", (id_devoir,))
-        conn.commit()
-        return jsonify({"message": "Devoir supprimé"}), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    db.session.delete(d)
+    db.session.commit()
+    return jsonify({'message': 'Devoir supprime'}), 200
 
 
-###################################################################################################################
-# ROUTES FORMULAIRES (prof uniquement)
-###################################################################################################################
-
+# ─── Formulaires ──────────────────────────────────────────────────────────────
 
 @devoirs_bp.route('/tri/classes', methods=['GET'])
 def get_classes_prof():
     suid = request.args.get('suid')
     user, err = verif_role(suid, ROLES_ECRITURE)
-    if err: return err
+    if err:
+        return err
 
-    conn = None
-    cursor = None
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT DISTINCT cl.ID, cl.Niveau, cl.Suffixe
-            FROM Cours c
-            JOIN Classe cl ON c.ID_Classe = cl.ID
-            WHERE c.ID_Prof = %s
-        """, (user['ID_Prof'],))
-        classes = cursor.fetchall()
-        return jsonify(classes), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    classes = (db.session.query(Classe)
+               .join(Cours, Cours.id_classe == Classe.id)
+               .filter(Cours.id_prof == user['ID_Prof'])
+               .distinct().all())
+    return jsonify([{'ID': c.id, 'Niveau': c.niveau, 'Suffixe': c.suffixe}
+                    for c in classes]), 200
 
 
 @devoirs_bp.route('/tri/matieres', methods=['GET'])
 def get_matieres_prof():
     suid = request.args.get('suid')
     user, err = verif_role(suid, ROLES_ECRITURE)
-    if err: return err
+    if err:
+        return err
 
-    conn = None
-    cursor = None
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT DISTINCT m.ID, m.Nom
-            FROM Prof p
-            JOIN Matiere m ON p.ID_Matiere = m.ID
-            WHERE p.ID = %s
-        """, (user['ID_Prof'],))
-        matieres = cursor.fetchall()
-        return jsonify(matieres), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    prof = db.session.get(Prof, user['ID_Prof'])
+    if not prof:
+        return jsonify([]), 200
+    return jsonify([{'ID': m.id, 'Nom': m.nom} for m in prof.matieres]), 200

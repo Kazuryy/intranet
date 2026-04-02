@@ -10,7 +10,10 @@ from .models import db
 
 
 bcrypt = Bcrypt()
-limiter = Limiter(get_remote_address)
+limiter = Limiter(
+    get_remote_address,
+    storage_uri="memory://"   # ← explicite, supprime le UserWarning
+)
 talisman = Talisman()
 
 
@@ -75,4 +78,9 @@ def create_app(config=None):
 
     from .auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    from .routes.devoirs import devoirs_bp
+    app.register_blueprint(devoirs_bp)
     return app
+
+
+

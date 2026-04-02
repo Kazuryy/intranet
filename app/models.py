@@ -194,10 +194,9 @@ class Cours(db.Model):
     )
     debut = db.Column(db.DateTime, nullable=False)
     fin = db.Column(db.DateTime, nullable=False)
-    etat = db.Column(
-        db.Enum('planifié', 'en cours', 'terminé', 'annulé'),
+    etat = db.Column(db.Enum('planifie', 'en cours', 'termine', 'annule'),
         nullable=False,
-        default='planifié'
+        default='planifie'
     )
     id_salle = db.Column(
         db.Integer, db.ForeignKey('salle.id', ondelete='SET NULL'), nullable=True
@@ -214,8 +213,7 @@ class Devoir(db.Model):
     id_matiere = db.Column(
         db.Integer, db.ForeignKey('matiere.id', ondelete='RESTRICT'), nullable=False
     )
-    type = db.Column(
-        db.Enum('exercice', 'soutenance', 'exposé', 'contrôle', 'autre'),
+    type = db.Column(db.Enum('exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre'),
         nullable=False
     )
     date_limite = db.Column(db.DateTime, nullable=False)
