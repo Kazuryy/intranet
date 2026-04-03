@@ -45,7 +45,7 @@ def test_get_messages_filtre_cible_eleves(client, message_fixture, eleve_suid):
 
 
 def test_get_messages_filtre_cible_profs(client, message_fixture_profs, prof_suid):
-    """Un prof voit les messages ciblant 'profs' ou 'tous'"""
+    """Un prof voit les messages ciblant 'prof' ou 'tous'"""
     suid, *_ = prof_suid
     response = client.get(f"/api/messages?suid={suid}")
     data = response.get_json()
@@ -53,7 +53,7 @@ def test_get_messages_filtre_cible_profs(client, message_fixture_profs, prof_sui
 
 
 def test_eleve_ne_voit_pas_message_profs(client, message_fixture_profs, eleve_suid):
-    """Un élève ne voit PAS un message ciblant uniquement 'profs'"""
+    """Un élève ne voit PAS un message ciblant uniquement 'prof'"""
     suid, *_ = eleve_suid
     response = client.get(f"/api/messages?suid={suid}")
     data = response.get_json()
@@ -80,7 +80,7 @@ def test_get_message_introuvable(client, eleve_suid):
 
 
 def test_get_message_interdit_mauvaise_cible(client, message_fixture_profs, eleve_suid):
-    """Un élève ne peut pas accéder à un message ciblant uniquement 'profs'"""
+    """Un élève ne peut pas accéder à un message ciblant uniquement 'prof'"""
     suid, *_ = eleve_suid
     msg_id = message_fixture_profs["msg_id"]
     response = client.get(f"/api/messages/{msg_id}?suid={suid}")
@@ -119,22 +119,26 @@ def test_publier_message_cible_tous(client, direction_suid):
     assert response.status_code == 201
 
 
+def test_publier_message_prof_ok(client, prof_suid):
+    """Un employé (prof) peut publier un message → 201"""
+    suid, *_ = prof_suid
+    response = client.post(
+        f"/api/messages?suid={suid}",
+        json={
+            "objet": "Rappel devoir",
+            "contenu": "Pensez à rendre votre devoir.",
+            "cible": "élève"
+        }
+    )
+    assert response.status_code == 201
+
+
 def test_publier_message_eleve_interdit(client, eleve_suid):
     """Un élève ne peut PAS publier de message → 403"""
     suid, *_ = eleve_suid
     response = client.post(
         f"/api/messages?suid={suid}",
         json={"objet": "Test", "contenu": "Texte", "cible": "tous"}
-    )
-    assert response.status_code == 403
-
-
-def test_publier_message_prof_interdit(client, prof_suid):
-    """Un prof ne peut PAS publier de message → 403"""
-    suid, *_ = prof_suid
-    response = client.post(
-        f"/api/messages?suid={suid}",
-        json={"objet": "Test", "contenu": "Texte", "cible": "profs"}
     )
     assert response.status_code == 403
 
@@ -236,7 +240,10 @@ def test_modifier_message_aucun_champ(client, direction_suid, message_fixture):
 def test_modifier_message_suid_manquant(client, message_fixture):
     """Sans suid → 401"""
     msg_id = message_fixture["msg_id"]
-    response = client.patch(f"/api/messages/{msg_id}", json={"contenu": "Test"})
+    response = client.patch(
+        f"/api/messages/{msg_id}",
+        json={"contenu": "Test"}
+    )
     assert response.status_code == 401
 
 
@@ -258,14 +265,6 @@ def test_supprimer_message_eleve_interdit(client, eleve_suid, message_fixture):
     assert response.status_code == 403
 
 
-def test_supprimer_message_prof_interdit(client, prof_suid, message_fixture):
-    """Un prof ne peut PAS supprimer → 403"""
-    suid, *_ = prof_suid
-    msg_id = message_fixture["msg_id"]
-    response = client.delete(f"/api/messages/{msg_id}?suid={suid}")
-    assert response.status_code == 403
-
-
 def test_supprimer_message_suid_manquant(client, message_fixture):
     """Sans suid → 401"""
     msg_id = message_fixture["msg_id"]
@@ -280,18 +279,16 @@ def test_supprimer_message_introuvable(client, direction_suid):
     assert response.status_code == 404
 
 
-# ─── MESSAGES AUTOMATIQUES : cours annulé/déplacé ────────────────────────────
+# ─── MESSAGES AUTOMATIQUES ───────────────────────────────────────────────────
+
 @pytest.mark.skip(reason="blueprint cours pas encore créé")
 def test_message_auto_cours_annule(client, app, direction_suid, cours_fixture):
-    """Annuler un cours génère automatiquement un message"""
     suid, *_ = direction_suid
     cours_id = cours_fixture["cours_id"]
-
     client.patch(
         f"/api/cours/{cours_id}?suid={suid}",
         json={"statut": "annulé"}
     )
-
     from app.models import Communication
     with app.app_context():
         msgs = Communication.query.filter(
@@ -299,18 +296,16 @@ def test_message_auto_cours_annule(client, app, direction_suid, cours_fixture):
         ).all()
         assert len(msgs) >= 1
 
+
 @pytest.mark.skip(reason="blueprint cours pas encore créé")
 def test_message_auto_cours_deplace(client, app, direction_suid, cours_fixture):
-    """Déplacer un cours génère automatiquement un message"""
     suid, *_ = direction_suid
     cours_id = cours_fixture["cours_id"]
     nouvelle_date = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d %H:%M")
-
     client.patch(
         f"/api/cours/{cours_id}?suid={suid}",
         json={"statut": "déplacé", "nouvelle_date": nouvelle_date}
     )
-
     from app.models import Communication
     with app.app_context():
         msgs = Communication.query.filter(
@@ -319,13 +314,10 @@ def test_message_auto_cours_deplace(client, app, direction_suid, cours_fixture):
         assert len(msgs) >= 1
 
 
-# ─── MESSAGES AUTOMATIQUES : événement programmé ─────────────────────────────
-@pytest.mark.skip(reason="blueprint cours pas encore créé")
+@pytest.mark.skip(reason="blueprint evenements pas encore créé")
 def test_message_auto_evenement_cree(client, app, direction_suid):
-    """Créer un événement génère automatiquement un message"""
     suid, *_ = direction_suid
     date_ev = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M")
-
     client.post(
         f"/api/evenements?suid={suid}",
         json={
@@ -335,7 +327,6 @@ def test_message_auto_evenement_cree(client, app, direction_suid):
             "lieu": "Hall principal"
         }
     )
-
     from app.models import Communication
     with app.app_context():
         msgs = Communication.query.filter(

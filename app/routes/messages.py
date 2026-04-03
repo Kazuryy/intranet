@@ -24,9 +24,8 @@ def get_user_from_suid(suid):
         return None
     return User.query.get(session.id_user)
 
-
-def is_direction(user):
-    return user and Direction.query.filter_by(id_user=user.id).first() is not None
+def peut_envoyer(user):
+    return user and user.type in ('employé', 'administrateur')
 
 
 @messagesbp.route('', methods=['GET'])
@@ -72,8 +71,8 @@ def publier_message():
     user = get_user_from_suid(request.args.get('suid'))
     if not user:
         return jsonify(error="Authentification requise"), 401
-    if not is_direction(user):
-        return jsonify(error="Réservé à la direction"), 403
+    if not peut_envoyer(user):
+        return jsonify(error="Réservé aux employés"), 403
 
     data = request.get_json() or {}
     objet   = str(escape(data.get('objet',   '').strip()))
@@ -101,8 +100,8 @@ def modifier_message(msg_id):
     user = get_user_from_suid(request.args.get('suid'))
     if not user:
         return jsonify(error="Authentification requise"), 401
-    if not is_direction(user):
-        return jsonify(error="Réservé à la direction"), 403
+    if not peut_envoyer(user):
+        return jsonify(error="Réservé aux employés"), 403
 
     msg = Communication.query.get(msg_id)
     if not msg:
@@ -128,8 +127,8 @@ def supprimer_message(msg_id):
     user = get_user_from_suid(request.args.get('suid'))
     if not user:
         return jsonify(error="Authentification requise"), 401
-    if not is_direction(user):
-        return jsonify(error="Réservé à la direction"), 403
+    if not peut_envoyer(user):
+        return jsonify(error="Réservé aux employés"), 403
 
     msg = Communication.query.get(msg_id)
     if not msg:
