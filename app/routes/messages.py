@@ -7,6 +7,7 @@ from markupsafe import escape
 
 CIBLES_VALIDES = {'parent', 'élève', 'prof', 'tous', 'classe'}
 
+
 # Mapping type User → cibles visibles
 CIBLES_PAR_TYPE = {
     'élève':          ['élève', 'tous', 'classe'],
@@ -19,10 +20,11 @@ CIBLES_PAR_TYPE = {
 def get_user_from_suid(suid):
     if not suid:
         return None
-    session = SessionAuth.query.filter_by(suid=suid).first()
-    if not session or session.expire_le < datetime.now():   # ← naive
+    s = SessionAuth.query.filter_by(suid=suid).first()
+    if not s or s.expire_le < datetime.now():
         return None
-    return User.query.get(session.id_user)
+    return User.query.get(s.id_user)
+
 
 def peut_envoyer(user):
     return user and user.type in ('employé', 'administrateur')
@@ -111,9 +113,11 @@ def modifier_message(msg_id):
     if not any(k in data for k in ('objet', 'contenu', 'cible')):
         return jsonify(error="Aucun champ valide fourni"), 400
 
-    if 'objet'   in data: msg.objet   = data['objet'].strip()
-    if 'contenu' in data: msg.contenu = data['contenu'].strip()
-    if 'cible'   in data:
+    if 'objet' in data:
+        msg.objet = data['objet'].strip()
+    if 'contenu' in data:
+        msg.contenu = data['contenu'].strip()
+    if 'cible' in data:
         if data['cible'] not in CIBLES_VALIDES:
             return jsonify(error="Cible invalide"), 400
         msg.cible = data['cible']
@@ -149,7 +153,8 @@ def _get_dir_user_id():
 
 def message_auto_cours_annule(cours):
     uid = _get_dir_user_id()
-    if not uid: return
+    if not uid:
+        return
     db.session.add(Communication(
         id_user=uid,
         cible="tous",
@@ -160,7 +165,8 @@ def message_auto_cours_annule(cours):
 
 def message_auto_cours_deplace(cours, nouvelle_date):
     uid = _get_dir_user_id()
-    if not uid: return
+    if not uid:
+        return
     db.session.add(Communication(
         id_user=uid,
         cible="tous",
@@ -171,7 +177,8 @@ def message_auto_cours_deplace(cours, nouvelle_date):
 
 def message_auto_evenement_cree(evenement):
     uid = _get_dir_user_id()
-    if not uid: return
+    if not uid:
+        return
     db.session.add(Communication(
         id_user=uid,
         cible="tous",

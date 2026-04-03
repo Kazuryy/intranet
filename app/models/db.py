@@ -1,4 +1,3 @@
-import mysql.connector
 from mysql.connector import pooling
 from dotenv import load_dotenv
 import os
@@ -13,6 +12,7 @@ db_config = {
 }
 
 pool = pooling.MySQLConnectionPool(pool_name="pool", pool_size=5, **db_config)
+
 
 def get_db():
     return pool.get_connection()
