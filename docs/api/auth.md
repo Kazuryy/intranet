@@ -1,6 +1,6 @@
 # API — Auth & Profils
 
-> Dernière mise à jour : 30 mars 2026
+> Dernière mise à jour : 3 avril 2026
 > Blueprint : `auth_bp` — préfixe `/auth`
 
 ---
@@ -16,7 +16,7 @@ Authentifie un utilisateur et ouvre une session.
 **Corps (JSON) :**
 ```json
 {
-  "username": "string",
+  "email": "string (mail interne, ex: prenom.nom@guardiaschool.fr)",
   "password": "string"
 }
 ```
@@ -126,6 +126,33 @@ Crée une entrée `Mail` avec objet et corps pré-remplis (identité de l'expéd
 | 400 | Champ non autorisé |
 | 404 | Aucun responsable direction en base |
 | 401 | Non authentifié |
+
+### POST /auth/setup-password
+
+Permet à un nouvel utilisateur de définir son mot de passe via le lien de setup envoyé par l'admin.
+
+**Auth requise :** non
+
+**Rate limit :** 5 requêtes / minute par IP.
+
+**Corps (JSON) :**
+```json
+{
+  "token": "string (token reçu par l'admin à la création du compte)",
+  "password": "string (min. 8 caractères)"
+}
+```
+
+**Validations :**
+- `token` vérifié en base (`setup_token`) et non expiré (`setup_token_expires`)
+- `password` : minimum 8 caractères
+- Après succès : `setup_token` et `setup_token_expires` remis à `null`
+
+**Réponses :**
+| Code | Cas |
+|---|---|
+| 200 | Mot de passe configuré |
+| 400 | Token ou password manquant, password trop court, lien invalide ou expiré |
 
 ---
 
