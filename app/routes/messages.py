@@ -19,10 +19,10 @@ CIBLES_PAR_TYPE = {
 def get_user_from_suid(suid):
     if not suid:
         return None
-    session = SessionAuth.query.filter_by(suid=suid).first()
-    if not session or session.expire_le < datetime.now():   # ← naive
+    s = SessionAuth.query.filter_by(suid=suid).first()
+    if not s or s.expire_le < datetime.now():
         return None
-    return User.query.get(session.id_user)
+    return User.query.get(s.id_user)
 
 
 def is_direction(user):
@@ -150,7 +150,8 @@ def _get_dir_user_id():
 
 def message_auto_cours_annule(cours):
     uid = _get_dir_user_id()
-    if not uid: return
+    if not uid:
+        return
     db.session.add(Communication(
         id_user=uid,
         cible="tous",

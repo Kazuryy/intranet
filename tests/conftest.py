@@ -43,8 +43,14 @@ def user(app):
         u = User(
             type='administrateur', nom='Test', prenom='User',
             username='testuser',
-            password=bcrypt.generate_password_hash('password123').decode('utf-8')
-        )
+            pwd = bcrypt.generate_password_hash('password123').decode('utf-8')
+            u = User(
+                type='employé',
+                nom='Dupont',
+                prenom='Paul',
+                username='prof_dupont',
+                password=pwd
+            )
         db.session.add(u)
         db.session.commit()
         yield u
@@ -207,7 +213,14 @@ def direction_suid(app):
             nom="Directeur",
             prenom="Pierre",
             username="pierre.directeur",
-            password=bcrypt.generate_password_hash("password123").decode("utf-8")
+            pwd = bcrypt.generate_password_hash('password123').decode('utf-8')
+            u = User(
+                type='employé',
+                nom='Dupont',
+                prenom='Paul',
+                username='prof_dupont',
+                password=pwd
+            )
         )
         db.session.add(u)
         db.session.flush()
