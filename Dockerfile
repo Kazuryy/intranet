@@ -14,4 +14,5 @@ ENV FLASK_ENV=${FLASK_ENV}
 
 EXPOSE 5000
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+RUN chmod +x entrypoint.sh
+CMD ["./entrypoint.sh"]
