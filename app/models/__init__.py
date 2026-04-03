@@ -26,8 +26,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     mail_interne = db.Column(db.String(150), unique=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    setup_token = db.Column(db.String(100), unique=True, nullable=True)
-    setup_token_expires = db.Column(db.DateTime, nullable=True)
 
 
 class Information(db.Model):
@@ -44,10 +42,12 @@ class Information(db.Model):
 
 class Direction(db.Model):
     __tablename__ = 'direction'
-    id      = db.Column(db.Integer, primary_key=True)          # ← ajout
-    id_user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    role    = db.Column(db.String(50))
 
+    id = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
+    )
+    role = db.Column(db.String(100))
 
 
 class Matiere(db.Model):
@@ -194,10 +194,9 @@ class Cours(db.Model):
     )
     debut = db.Column(db.DateTime, nullable=False)
     fin = db.Column(db.DateTime, nullable=False)
-    etat = db.Column(
-        db.Enum('planifié', 'en cours', 'terminé', 'annulé'),
+    etat = db.Column(db.Enum('planifie', 'en cours', 'termine', 'annule'),
         nullable=False,
-        default='planifié'
+        default='planifie'
     )
     id_salle = db.Column(
         db.Integer, db.ForeignKey('salle.id', ondelete='SET NULL'), nullable=True
@@ -214,8 +213,7 @@ class Devoir(db.Model):
     id_matiere = db.Column(
         db.Integer, db.ForeignKey('matiere.id', ondelete='RESTRICT'), nullable=False
     )
-    type = db.Column(
-        db.Enum('exercice', 'soutenance', 'exposé', 'contrôle', 'autre'),
+    type = db.Column(db.Enum('exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre'),
         nullable=False
     )
     date_limite = db.Column(db.DateTime, nullable=False)
@@ -270,17 +268,21 @@ class Mail(db.Model):
     date = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
-
 class Communication(db.Model):
     __tablename__ = 'communication'
-    id           = db.Column(db.Integer, primary_key=True)
-    id_direction = db.Column(db.Integer, db.ForeignKey('direction.id', ondelete='CASCADE'), nullable=False)
-    cible        = db.Column(db.Enum('parent', 'élève', 'tous', 'profs', 'employés'), nullable=False)
-    id_cible     = db.Column(db.Integer, nullable=True)   # ex : id_classe si cible='élève'
-    objet        = db.Column(db.String(255))
-    contenu      = db.Column(db.Text)
-    date_debut   = db.Column(db.DateTime)
-    date_fin     = db.Column(db.DateTime)
+
+    id = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
+    )
+    cible = db.Column(
+        db.Enum('parent', 'élève', 'prof', 'tous', 'classe'), nullable=False
+    )
+    id_cible = db.Column(db.Integer)
+    objet = db.Column(db.String(255))
+    contenu = db.Column(db.Text)
+    date_debut = db.Column(db.DateTime)
+    date_fin = db.Column(db.DateTime)
 
 
 class Assiduite(db.Model):
@@ -316,7 +318,7 @@ class Log(db.Model):
         nullable=False,
         default=lambda: datetime.now(timezone.utc)
     )
-
+    
 class SessionAuth(db.Model):
     __tablename__ = 'session'
     id        = db.Column(db.Integer, primary_key=True)

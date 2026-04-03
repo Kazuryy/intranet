@@ -78,4 +78,8 @@ def create_app(config=None):
 
     from .admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    from .routes import messagesbp
+    app.register_blueprint(messagesbp, url_prefix='/api/messages') 
+
     return app
