@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from app.models import db, User, Communication, Direction, SessionAuth
+from ..models import db, User, Communication, Direction, SessionAuth
 from datetime import datetime
 from markupsafe import escape
 
