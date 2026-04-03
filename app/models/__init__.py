@@ -26,6 +26,8 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     mail_interne = db.Column(db.String(150), unique=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    setup_token = db.Column(db.String(100), unique=True, nullable=True)
+    setup_token_expires = db.Column(db.DateTime, nullable=True)
 
 
 class Information(db.Model):
