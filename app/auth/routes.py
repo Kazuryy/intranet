@@ -19,6 +19,18 @@ def _log(action, user_id=None, target_type=None, target_id=None):
     ))
 
 
+@auth_bp.get('/me')
+@login_required
+def me():
+    return jsonify({
+        'id': current_user.id,
+        'nom': current_user.nom,
+        'prenom': current_user.prenom,
+        'type': current_user.type,
+        'mail_interne': current_user.mail_interne
+    }), 200
+
+
 @auth_bp.post('/login')
 @limiter.limit("5 per minute")
 def login():
