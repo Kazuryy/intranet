@@ -1,15 +1,18 @@
+import os
 import uuid
 import pytest
 from datetime import datetime, date, timedelta
 from app import bcrypt, create_app
 from app.models import db, Direction, User, SessionAuth, Communication, Cours
 
+_DB_URI = os.environ.get('DATABASE_URL', 'sqlite:///:memory:')
+
 
 # ── App & client ──────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def app():
-    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:'})
+    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': _DB_URI})
     with app.app_context():
         db.create_all()
         yield app
@@ -43,14 +46,8 @@ def user(app):
         u = User(
             type='administrateur', nom='Test', prenom='User',
             username='testuser',
-            pwd = bcrypt.generate_password_hash('password123').decode('utf-8')
-            u = User(
-                type='employé',
-                nom='Dupont',
-                prenom='Paul',
-                username='prof_dupont',
-                password=pwd
-            )
+            password=bcrypt.generate_password_hash('password123').decode('utf-8')
+        )
         db.session.add(u)
         db.session.commit()
         yield u
@@ -213,14 +210,7 @@ def direction_suid(app):
             nom="Directeur",
             prenom="Pierre",
             username="pierre.directeur",
-            pwd = bcrypt.generate_password_hash('password123').decode('utf-8')
-            u = User(
-                type='employé',
-                nom='Dupont',
-                prenom='Paul',
-                username='prof_dupont',
-                password=pwd
-            )
+            password=bcrypt.generate_password_hash("password123").decode("utf-8")
         )
         db.session.add(u)
         db.session.flush()

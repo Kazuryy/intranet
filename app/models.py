@@ -65,6 +65,7 @@ class Prof(db.Model):
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
     )
     matieres = db.relationship('Matiere', secondary=prof_matiere, backref='profs')
+    user = db.relationship('User', foreign_keys=[id_user])
 
 
 class Classe(db.Model):
@@ -114,6 +115,7 @@ class Parent(db.Model):
     id_information = db.Column(
         db.Integer, db.ForeignKey('information.id', ondelete='SET NULL'), nullable=True
     )
+    eleve = db.relationship('Eleve', foreign_keys=[id_eleve])
 
 
 class Employe(db.Model):
@@ -202,6 +204,10 @@ class Cours(db.Model):
     id_salle = db.Column(
         db.Integer, db.ForeignKey('salle.id', ondelete='SET NULL'), nullable=True
     )
+    matiere = db.relationship('Matiere', foreign_keys=[id_matiere])
+    prof = db.relationship('Prof', foreign_keys=[id_prof])
+    classe = db.relationship('Classe', foreign_keys=[id_classe])
+    salle = db.relationship('Salle', foreign_keys=[id_salle])
 
 
 class Devoir(db.Model):
