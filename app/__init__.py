@@ -81,4 +81,8 @@ def create_app(config=None):
 
     from .edt import edt_bp
     app.register_blueprint(edt_bp, url_prefix='/edt')
+
+    from .routes import messagesbp
+    app.register_blueprint(messagesbp, url_prefix='/api/messages')
+
     return app
