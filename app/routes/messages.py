@@ -1,9 +1,11 @@
 from flask import jsonify, request
 from app.models import db, User, Communication, Direction, SessionAuth
 from datetime import datetime
-from . import messagesbp
 from markupsafe import escape
 
+from flask import Blueprint
+
+messagesbp = Blueprint('messages', __name__)
 
 CIBLES_VALIDES = {'parent', 'élève', 'prof', 'tous', 'classe'}
 

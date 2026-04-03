@@ -1,5 +1,1 @@
-from flask import Blueprint
-from . import messages  # noqa: F401,E402
-
-
-messagesbp = Blueprint('messages', __name__)
+from .messages import messagesbp  # noqa: F401
