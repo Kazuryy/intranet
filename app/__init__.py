@@ -78,4 +78,7 @@ def create_app(config=None):
 
     from .admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    from .edt import edt_bp
+    app.register_blueprint(edt_bp, url_prefix='/edt')
     return app

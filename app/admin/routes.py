@@ -5,8 +5,8 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from . import admin_bp
-from ..models import db, Direction, Log, User
-from ..decorators import role_required
+from ..models import db, Log, User
+from ..decorators import is_direction, role_required
 
 
 def _log(action, target_id=None):
@@ -62,14 +62,10 @@ def _generate_username(prenom, nom):
         i += 1
 
 
-def _is_direction():
-    return Direction.query.filter_by(id_user=current_user.id).first() is not None
-
-
 def _can_create(requested_type):
     if current_user.type == 'administrateur':
         return True
-    if current_user.type == 'employé' and _is_direction():
+    if current_user.type == 'employé' and is_direction():
         return requested_type in DIRECTION_TYPES
     return False
 
@@ -84,7 +80,7 @@ def list_users():
     query = User.query
 
     if current_user.type == 'employé':
-        if not _is_direction():
+        if not is_direction():
             return jsonify({'error': 'Accès refusé'}), 403
         query = query.filter(User.type.in_(DIRECTION_TYPES))
 
@@ -177,7 +173,7 @@ def update_user(user_id):
         return jsonify({'error': 'Utilisateur introuvable'}), 404
 
     if current_user.type == 'employé':
-        if not _is_direction() or user.type not in DIRECTION_TYPES:
+        if not is_direction() or user.type not in DIRECTION_TYPES:
             return jsonify({'error': 'Accès refusé'}), 403
     data = request.get_json(silent=True)
     if data is None:
@@ -236,7 +232,7 @@ def delete_user(user_id):
         return jsonify({'error': 'Utilisateur introuvable'}), 404
 
     if current_user.type == 'employé':
-        if not _is_direction() or user.type not in DIRECTION_TYPES:
+        if not is_direction() or user.type not in DIRECTION_TYPES:
             return jsonify({'error': 'Accès refusé'}), 403
 
     if user.id == current_user.id:

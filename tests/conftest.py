@@ -1,11 +1,14 @@
+import os
 import pytest
 from app import bcrypt, create_app
 from app.models import Direction, User, db
 
+_DB_URI = os.environ.get('DATABASE_URL', 'sqlite:///:memory:')
+
 
 @pytest.fixture
 def app():
-    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:'})
+    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': _DB_URI})
 
     with app.app_context():
         db.create_all()
