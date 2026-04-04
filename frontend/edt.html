@@ -312,4 +312,283 @@
         .devoir-checkbox:checked {
             accent-color: #818cf8;
         }
+        .cours-annule {
+            opacity: 0.45;
+            text-decoration: line-through;
+        }
     </style>
+
+    <!-- Modal création de cours (admin / direction / prof) -->
+    <div id="modal-cours" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/90 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-md p-6 mx-4">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouveau cours</h3>
+            <div id="modal-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="modal-error-msg"></span>
+            </div>
+            <form id="form-cours" novalidate class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matiere</label>
+                    <select id="c-matiere" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div id="c-prof-row">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Professeur</label>
+                    <select id="c-prof" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="c-classe" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Debut</label>
+                        <input type="datetime-local" id="c-debut" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Fin</label>
+                        <input type="datetime-local" id="c-fin" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Salle (optionnel)</label>
+                    <select id="c-salle" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="btn-cancel-cours" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-cours" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="submit-text">Creer</span>
+                        <i id="submit-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const JOUR_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+        function apiToMock(c) {
+            const debut = new Date(c.debut);
+            const fin   = new Date(c.fin);
+            return {
+                jour:    JOUR_NAMES[debut.getDay()],
+                debut:   debut.getHours() + debut.getMinutes() / 60,
+                fin:     fin.getHours()   + fin.getMinutes()   / 60,
+                matiere: c.matiere?.nom || 'Inconnu',
+                prof:    (c.prof?.prenom && c.prof?.nom) ? `${c.prof.prenom} ${c.prof.nom}` : '',
+                salle:   c.salle?.nom || '',
+                etat:    c.etat,
+                _annule: c.etat === 'annulé',
+            };
+        }
+
+        async function loadCours(startDate) {
+            const debut = new Date(startDate);
+            debut.setHours(0, 0, 0, 0);
+
+            const fin = new Date(startDate);
+            fin.setDate(fin.getDate() + 6);
+            fin.setHours(23, 59, 59, 999);
+
+            try {
+                const params = new URLSearchParams({
+                    debut: debut.toISOString(),
+                    fin:   fin.toISOString(),
+                });
+                const res = await fetch('/edt/cours?' + params.toString());
+                if (!res.ok) return;
+
+                const data = await res.json();
+                // Muter MOCK_COURS en place pour que renderCours() le relise
+                MOCK_COURS.splice(0, MOCK_COURS.length, ...data.map(apiToMock));
+                renderCours();
+            } catch (e) {
+                console.error('Erreur chargement EDT:', e);
+            }
+        }
+
+        document.body.addEventListener('week-selected', (e) => {
+            currentWeekStart = e.detail.startDate;
+            loadCours(currentWeekStart);
+        });
+
+        // ── Rôle & bouton creation ───────────────────────────────────────────
+
+        let currentWeekStart = null;
+        let currentUserInfo  = null;
+        let profSelfId       = null; // id Prof si l'user connecte est un prof
+
+        async function initRole() {
+            const res = await fetch('/auth/me');
+            if (!res.ok) return;
+            currentUserInfo = await res.json();
+
+            const role = currentUserInfo.type;
+            const canCreate = (role === 'administrateur') ||
+                              (role === 'employé'); // direction vérifiée côté API
+
+            if (canCreate) {
+                // Injecter le bouton "+" dans la barre de navigation
+                const btnZone = document.querySelector('.flex.items-center.gap-2');
+                if (btnZone) {
+                    const btn = document.createElement('button');
+                    btn.id = 'btn-new-cours';
+                    btn.title = 'Nouveau cours';
+                    btn.className = 'flex items-center justify-center w-7 h-7 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-colors';
+                    btn.innerHTML = '<i class="fas fa-plus text-sm"></i>';
+                    btnZone.prepend(btn);
+                    btn.addEventListener('click', openCreateModal);
+                }
+                loadSelectData();
+            }
+
+            // Si prof, récupérer son id_prof pour pré-remplir
+            if (role === 'employé') {
+                try {
+                    const r = await fetch('/edt/profs');
+                    if (r.ok) {
+                        const profs = await r.json();
+                        // On cherche le prof dont le user correspond
+                        // L'API retourne {id, nom, prenom} mais pas id_user.
+                        // On fait un pre-fill uniquement si un seul prof porte le même nom.
+                        // On laisse le select libre sinon.
+                    }
+                } catch {}
+            }
+        }
+
+        // ── Chargement des selects ────────────────────────────────────────────
+
+        async function loadSelectData() {
+            const [mRes, pRes, cRes, sRes] = await Promise.all([
+                fetch('/edt/matieres'),
+                fetch('/edt/profs'),
+                fetch('/edt/classes'),
+                fetch('/edt/salles'),
+            ]);
+
+            if (mRes.ok) fillSelect('c-matiere', await mRes.json(), 'nom', '-- Matiere --');
+            if (pRes.ok) fillSelect('c-prof', await pRes.json(), null, '-- Professeur --', p => `${p.prenom} ${p.nom}`);
+            if (cRes.ok) fillSelect('c-classe', await cRes.json(), 'label', '-- Classe --');
+            if (sRes.ok) {
+                const salles = await sRes.json();
+                fillSelect('c-salle', salles, 'nom', '-- Aucune --');
+            }
+
+            // Si direction/admin, laisser le select prof visible.
+            // Si c'est un prof (employé non direction), pas de liste profs accessible (403).
+            // Dans ce cas on cache la ligne prof et on laisse l'API auto-déterminer.
+            if (!pRes.ok) {
+                document.getElementById('c-prof-row').classList.add('hidden');
+                document.getElementById('c-prof').removeAttribute('required');
+            }
+        }
+
+        function fillSelect(id, items, labelField, placeholder, labelFn) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = labelFn ? labelFn(item) : item[labelField];
+                sel.appendChild(opt);
+            });
+        }
+
+        // ── Modal ─────────────────────────────────────────────────────────────
+
+        function openCreateModal() {
+            document.getElementById('modal-error').classList.add('hidden');
+            document.getElementById('form-cours').reset();
+
+            // Pré-remplir debut/fin sur la semaine en cours, aujourd'hui 8h-9h
+            if (currentWeekStart) {
+                const today = new Date();
+                const base = new Date(currentWeekStart);
+                // Prendre le jour courant si dans la semaine, sinon lundi
+                const dayOffset = today >= currentWeekStart ? Math.min(
+                    Math.floor((today - currentWeekStart) / 86400000), 4
+                ) : 0;
+                base.setDate(base.getDate() + dayOffset);
+                const pad = n => String(n).padStart(2, '0');
+                const dateStr = `${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`;
+                document.getElementById('c-debut').value = `${dateStr}T08:00`;
+                document.getElementById('c-fin').value   = `${dateStr}T09:00`;
+            }
+
+            document.getElementById('modal-cours').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-cancel-cours').addEventListener('click', () => {
+            document.getElementById('modal-cours').classList.add('hidden');
+        });
+
+        document.getElementById('form-cours').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('modal-error').classList.add('hidden');
+
+            const id_matiere = parseInt(document.getElementById('c-matiere').value);
+            const id_prof    = parseInt(document.getElementById('c-prof').value) || undefined;
+            const id_classe  = parseInt(document.getElementById('c-classe').value);
+            const debut      = document.getElementById('c-debut').value;
+            const fin        = document.getElementById('c-fin').value;
+            const id_salle   = parseInt(document.getElementById('c-salle').value) || undefined;
+
+            if (!id_matiere || !id_classe || !debut || !fin) {
+                document.getElementById('modal-error-msg').textContent = 'Matiere, classe, debut et fin sont requis.';
+                document.getElementById('modal-error').classList.remove('hidden');
+                return;
+            }
+
+            if (debut >= fin) {
+                document.getElementById('modal-error-msg').textContent = 'La fin doit etre apres le debut.';
+                document.getElementById('modal-error').classList.remove('hidden');
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit-cours');
+            const spinner   = document.getElementById('submit-spinner');
+            const btnText   = document.getElementById('submit-text');
+            submitBtn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Creation...';
+
+            const body = { id_matiere, id_classe, debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString() };
+            if (id_prof)  body.id_prof  = id_prof;
+            if (id_salle) body.id_salle = id_salle;
+
+            try {
+                const res = await fetch('/edt/cours', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('modal-error-msg').textContent = data.error || 'Erreur serveur.';
+                    document.getElementById('modal-error').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('modal-cours').classList.add('hidden');
+                if (currentWeekStart) loadCours(currentWeekStart);
+            } catch {
+                document.getElementById('modal-error-msg').textContent = 'Impossible de joindre le serveur.';
+                document.getElementById('modal-error').classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = 'Creer';
+            }
+        });
+
+        initRole();
+    </script>
+</body>
+</html>
