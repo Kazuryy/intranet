@@ -5,7 +5,7 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from . import admin_bp
-from ..models import db, Log, User
+from ..models import db, Log, Matiere, Prof, User
 from ..decorators import is_direction, role_required
 
 
@@ -243,3 +243,66 @@ def delete_user(user_id):
     db.session.commit()
 
     return jsonify({'message': 'Compte supprimé'}), 200
+
+
+@admin_bp.post('/users/<int:user_id>/set-prof')
+@login_required
+@role_required('administrateur')
+def set_prof(user_id):
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({'error': 'Utilisateur introuvable'}), 404
+    if user.type != 'employé':
+        return jsonify({'error': "L'utilisateur doit être de type employé"}), 400
+
+    existing = Prof.query.filter_by(id_user=user_id).first()
+    if existing:
+        return jsonify({'message': 'Déjà professeur', 'id_prof': existing.id}), 200
+
+    prof = Prof(id_user=user_id)
+    db.session.add(prof)
+    _log('set_prof', target_id=user_id)
+    db.session.commit()
+    return jsonify({'message': 'Professeur créé', 'id_prof': prof.id}), 201
+
+
+@admin_bp.delete('/users/<int:user_id>/set-prof')
+@login_required
+@role_required('administrateur')
+def unset_prof(user_id):
+    prof = Prof.query.filter_by(id_user=user_id).first()
+    if not prof:
+        return jsonify({'error': 'Cet utilisateur n\'est pas professeur'}), 404
+    _log('unset_prof', target_id=user_id)
+    db.session.delete(prof)
+    db.session.commit()
+    return jsonify({'message': 'Statut professeur retiré'}), 200
+
+
+@admin_bp.get('/users/<int:user_id>/prof-status')
+@login_required
+@role_required('administrateur')
+def prof_status(user_id):
+    prof = Prof.query.filter_by(id_user=user_id).first()
+    matieres = [{'id': m.id, 'nom': m.nom} for m in prof.matieres] if prof else []
+    return jsonify({'is_prof': prof is not None, 'id_prof': prof.id if prof else None, 'matieres': matieres}), 200
+
+
+@admin_bp.post('/users/<int:user_id>/prof-matieres')
+@login_required
+@role_required('administrateur')
+def set_prof_matieres(user_id):
+    prof = Prof.query.filter_by(id_user=user_id).first()
+    if not prof:
+        return jsonify({'error': 'Cet utilisateur n\'est pas professeur'}), 404
+
+    data = request.get_json(silent=True) or {}
+    matiere_ids = data.get('matiere_ids', [])
+    if not isinstance(matiere_ids, list):
+        return jsonify({'error': 'matiere_ids doit être une liste'}), 400
+
+    matieres = Matiere.query.filter(Matiere.id.in_(matiere_ids)).all()
+    prof.matieres = matieres
+    _log('prof_matieres_updated', target_id=user_id)
+    db.session.commit()
+    return jsonify({'matieres': [{'id': m.id, 'nom': m.nom} for m in matieres]}), 200

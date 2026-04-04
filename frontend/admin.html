@@ -208,6 +208,23 @@
                         <span id="edit-active-thumb" class="inline-block w-4 h-4 bg-white rounded-full shadow absolute top-0.5 transition-transform"></span>
                     </button>
                 </div>
+
+                <!-- Section prof (employé uniquement) -->
+                <div id="prof-section" class="hidden mb-4 border-t border-slate-200 pt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-indigo-900 uppercase tracking-widest">Statut professeur</label>
+                        <button type="button" id="btn-toggle-prof"
+                            class="text-xs font-semibold px-3 py-1 rounded-lg transition"></button>
+                    </div>
+                    <div id="prof-matieres-section" class="hidden mt-2">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matieres enseignees</label>
+                        <div id="matieres-checkboxes" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto"></div>
+                        <button type="button" id="btn-save-matieres"
+                            class="mt-2 text-xs font-semibold px-3 py-1 bg-indigo-900 text-white rounded-lg hover:bg-indigo-800 transition">
+                            Enregistrer les matieres
+                        </button>
+                    </div>
+                </div>
                 <div class="flex gap-2">
                     <button type="button" id="btn-cancel-edit"
                         class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">
@@ -431,7 +448,9 @@
         });
 
         // ---- Modal modifier ----
-        function openEditModal(userId) {
+        let allMatieres = [];
+
+        async function openEditModal(userId) {
             const user = users.find(u => u.id === userId);
             if (!user) return;
 
@@ -440,11 +459,101 @@
             document.getElementById('edit-prenom').value = user.prenom;
             document.getElementById('edit-type').value = user.type;
             document.getElementById('edit-error').classList.add('hidden');
+            document.getElementById('prof-matieres-section').classList.add('hidden');
 
             editIsActive = user.is_active;
             updateToggle();
 
+            const profSection = document.getElementById('prof-section');
+            if (user.type === 'employé') {
+                profSection.classList.remove('hidden');
+                await loadProfStatus(userId);
+            } else {
+                profSection.classList.add('hidden');
+            }
+
             document.getElementById('modal-edit').classList.remove('hidden');
+        }
+
+        async function loadProfStatus(userId) {
+            const btn = document.getElementById('btn-toggle-prof');
+            btn.textContent = '...';
+            try {
+                const res = await fetch(`/admin/users/${userId}/prof-status`);
+                const data = await res.json();
+                updateProfButton(userId, data.is_prof);
+
+                if (data.is_prof) {
+                    await loadMatiereCheckboxes(userId, data.matieres);
+                    document.getElementById('prof-matieres-section').classList.remove('hidden');
+                }
+            } catch {
+                btn.textContent = 'Erreur';
+            }
+        }
+
+        function updateProfButton(userId, isProf) {
+            const btn = document.getElementById('btn-toggle-prof');
+            if (isProf) {
+                btn.textContent = 'Retirer statut prof';
+                btn.className = 'text-xs font-semibold px-3 py-1 rounded-lg transition bg-red-100 text-red-700 hover:bg-red-200';
+                btn.onclick = () => toggleProf(userId, false);
+            } else {
+                btn.textContent = 'Definir comme prof';
+                btn.className = 'text-xs font-semibold px-3 py-1 rounded-lg transition bg-green-100 text-green-700 hover:bg-green-200';
+                btn.onclick = () => toggleProf(userId, true);
+            }
+        }
+
+        async function toggleProf(userId, promote) {
+            const method = promote ? 'POST' : 'DELETE';
+            const res = await fetch(`/admin/users/${userId}/set-prof`, { method });
+            if (res.ok) {
+                const matiereSection = document.getElementById('prof-matieres-section');
+                updateProfButton(userId, promote);
+                if (promote) {
+                    await loadMatiereCheckboxes(userId, []);
+                    matiereSection.classList.remove('hidden');
+                } else {
+                    matiereSection.classList.add('hidden');
+                }
+            }
+        }
+
+        async function loadMatiereCheckboxes(userId, selected) {
+            if (allMatieres.length === 0) {
+                try {
+                    const res = await fetch('/edt/matieres');
+                    if (res.ok) allMatieres = await res.json();
+                } catch {}
+            }
+
+            const selectedIds = new Set(selected.map(m => m.id));
+            const container = document.getElementById('matieres-checkboxes');
+            container.innerHTML = allMatieres.map(m => `
+                <label class="flex items-center gap-1.5 text-xs bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-indigo-50">
+                    <input type="checkbox" value="${m.id}" ${selectedIds.has(m.id) ? 'checked' : ''}
+                        class="accent-indigo-600">
+                    ${escHtml(m.nom)}
+                </label>
+            `).join('');
+
+            document.getElementById('btn-save-matieres').onclick = () => saveMatieres(userId);
+        }
+
+        async function saveMatieres(userId) {
+            const checked = [...document.querySelectorAll('#matieres-checkboxes input:checked')]
+                .map(i => parseInt(i.value));
+            const res = await fetch(`/admin/users/${userId}/prof-matieres`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ matiere_ids: checked }),
+            });
+            if (res.ok) {
+                const btn = document.getElementById('btn-save-matieres');
+                btn.textContent = 'Enregistre !';
+                setTimeout(() => { btn.textContent = 'Enregistrer les matieres'; }, 1500);
+            }
         }
 
         function updateToggle() {
