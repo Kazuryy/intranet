@@ -45,12 +45,6 @@ document.addEventListener('auth-ready', (e) => {
                 Administration
             </a>` : ''}
 
-            <a href="/profil.html"
-                class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
-                <i class="fa-solid fa-user w-3.5 text-center text-slate-400"></i>
-                Mon profil
-            </a>
-
             <div class="border-t border-slate-100 mt-1"></div>
 
             <button id="btn-logout"
@@ -95,3 +89,28 @@ function escName(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 }
+
+// Navigation pour les boutons nav-btn (admin.html n'inclut pas script.js)
+document.querySelectorAll('.nav-btn[data-href]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        window.location.href = btn.dataset.href;
+    });
+});
+
+// Désactiver les liens vers des pages non encore implémentées
+const PAGES_DISPONIBLES = new Set([
+    'index.html', 'edt.html', 'notes.html', 'admin.html',
+    'login.html', 'setup-password.html'
+]);
+
+document.querySelectorAll('[data-href]').forEach(el => {
+    const href = el.dataset.href;
+    if (!href || PAGES_DISPONIBLES.has(href)) return;
+
+    // Désactiver visuellement
+    el.removeAttribute('data-href');
+    el.style.opacity = '0.45';
+    el.style.cursor = 'not-allowed';
+    el.title = 'Bientot disponible';
+    el.addEventListener('click', e => e.stopImmediatePropagation());
+});
