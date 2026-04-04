@@ -6,6 +6,7 @@ from flask_limiter import Limiter
 from flask_limiter.errors import RateLimitExceeded
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .models import db
 
 
@@ -16,6 +17,7 @@ talisman = Talisman()
 
 def create_app(config=None):
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # COnfig
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
@@ -34,6 +36,7 @@ def create_app(config=None):
     app.config['SECRET_KEY'] = secret_key
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = flask_env == 'production'
     app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
     if config:
@@ -67,7 +70,10 @@ def create_app(config=None):
     @login_manager.user_loader
     def load_user(user_id):
         from .models import User
-        return User.query.get(int(user_id))
+        user = User.query.get(int(user_id))
+        if user is None or not user.is_active:
+            return None
+        return user
 
     @app.route("/health")
     def health():
