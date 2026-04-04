@@ -7,7 +7,10 @@ document.documentElement.style.visibility = 'hidden';
         if (!res.ok) {
             window.location.replace('/login.html');
         } else {
+            const user = await res.json();
+            window.__currentUser = user;
             document.documentElement.style.visibility = 'visible';
+            document.dispatchEvent(new CustomEvent('auth-ready', { detail: user }));
         }
     } catch {
         window.location.replace('/login.html');

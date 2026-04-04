@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="auth-guard.js"></script>
+    <script src="user-menu.js" defer></script>
 </head>
 <body class="m-0 font-sans text-slate-800 min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100">
 
@@ -29,9 +30,6 @@
                     Administration
                 </button>
             </nav>
-            <button id="logout-btn" class="text-xs text-white/70 hover:text-white transition flex items-center gap-1.5">
-                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
-            </button>
         </div>
     </div>
 
@@ -732,11 +730,6 @@
         }
 
         // ---- Déconnexion ----
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await fetch('/auth/logout', { method: 'POST' });
-            window.location.replace('/login.html');
-        });
-
         // ---- Vérification rôle admin ----
         async function checkRole() {
             const res = await fetch('/auth/me');
