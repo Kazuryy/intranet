@@ -45,10 +45,12 @@ def create_app(config=None):
     db.init_app(app)
     bcrypt.init_app(app)
     limiter.init_app(app)
+    is_prod = flask_env == 'production'
     talisman.init_app(
         app,
-        force_https=os.environ.get('FLASK_ENV') == 'production',
-        strict_transport_security=os.environ.get('FLASK_ENV') == 'production',
+        force_https=is_prod,
+        strict_transport_security=is_prod,
+        session_cookie_secure=is_prod,
         frame_options='DENY',
         x_content_type_options=True,
         content_security_policy={
