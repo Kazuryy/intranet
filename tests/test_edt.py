@@ -437,3 +437,362 @@ def test_delete_cours_forbidden(client, eleve_user, setup):
 def test_delete_cours_unauthenticated(client, setup):
     response = client.delete(f'/edt/cours/{setup["cours"].id}')
     assert response.status_code == 401
+
+
+@pytest.fixture
+def employe_user(app):
+    """Employé non-direction (ex: cantine)."""
+    with app.app_context():
+        u = User(
+            type='employé', nom='Cantine', prenom='Agent',
+            username='cantine_edt2',
+            mail_interne='cantine2.edt@guardiaschool.fr',
+            password=bcrypt.generate_password_hash('cantinepass2').decode('utf-8')
+        )
+        db.session.add(u)
+        db.session.commit()
+        yield u
+
+
+# --- GET /edt/cours : cas limites de scope ---
+
+def test_list_cours_eleve_without_classe(client, app, setup):
+    # élève sans classe assignée => liste vide
+    with app.app_context():
+        u = User(
+            type='élève', nom='Orphelin', prenom='Eleve',
+            username='orphelin_edt',
+            mail_interne='orphelin.edt@guardiaschool.fr',
+            password=bcrypt.generate_password_hash('orphelinpass').decode('utf-8')
+        )
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(Eleve(id_user=u.id, id_classe=None))
+        db.session.commit()
+    client.post('/auth/login', json={
+        'email': 'orphelin.edt@guardiaschool.fr', 'password': 'orphelinpass'
+    })
+    response = client.get('/edt/cours')
+    assert response.status_code == 200
+    assert response.get_json() == []
+
+
+def test_list_cours_employe_not_prof(client, employe_user):
+    # employé non-direction qui n'est pas prof => liste vide
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.get('/edt/cours')
+    assert response.status_code == 200
+    assert response.get_json() == []
+
+
+def test_list_cours_admin_filter_classe(client, admin, setup):
+    # admin filtre par classe_id => log déclenché
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get(f'/edt/cours?classe_id={setup["classe"].id}')
+    assert response.status_code == 200
+    assert len(response.get_json()) == 1
+
+
+def test_list_cours_admin_filter_prof(client, admin, setup):
+    # admin filtre par prof_id
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get(f'/edt/cours?prof_id={setup["prof"].id}')
+    assert response.status_code == 200
+    assert len(response.get_json()) == 1
+
+
+def test_list_cours_direction_filter_classe(client, direction_user, setup):
+    # direction filtre par classe_id
+    client.post('/auth/login', json={
+        'email': 'dir.edt@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.get(f'/edt/cours?classe_id={setup["classe"].id}')
+    assert response.status_code == 200
+    assert len(response.get_json()) == 1
+
+
+def test_list_cours_direction_filter_prof(client, direction_user, setup):
+    # direction filtre par prof_id
+    client.post('/auth/login', json={
+        'email': 'dir.edt@guardiaschool.fr', 'password': 'dirpass'
+    })
+    response = client.get(f'/edt/cours?prof_id={setup["prof"].id}')
+    assert response.status_code == 200
+    assert len(response.get_json()) == 1
+
+
+def test_list_cours_invalid_fin_date(client, admin):
+    # date fin invalide en querystring => 400
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get('/edt/cours?fin=pas-une-date')
+    assert response.status_code == 400
+
+
+# --- POST /edt/cours : cas limites ---
+
+def test_create_cours_no_json(client, admin):
+    # pas de JSON => 400
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post(
+        '/edt/cours', data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_create_cours_invalid_date_format(client, admin, setup):
+    # format de date invalide => 400
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/edt/cours', json={
+        'id_matiere': setup['matiere'].id,
+        'id_prof': setup['prof'].id,
+        'id_classe': setup['classe'].id,
+        'debut': 'pas-une-date',
+        'fin': '2026-04-08T10:00:00',
+    })
+    assert response.status_code == 400
+
+
+def test_create_cours_matiere_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/edt/cours', json={
+        'id_matiere': 9999,
+        'id_prof': setup['prof'].id,
+        'id_classe': setup['classe'].id,
+        'debut': '2026-04-08T08:00:00',
+        'fin': '2026-04-08T10:00:00',
+    })
+    assert response.status_code == 404
+
+
+def test_create_cours_prof_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/edt/cours', json={
+        'id_matiere': setup['matiere'].id,
+        'id_prof': 9999,
+        'id_classe': setup['classe'].id,
+        'debut': '2026-04-08T08:00:00',
+        'fin': '2026-04-08T10:00:00',
+    })
+    assert response.status_code == 404
+
+
+def test_create_cours_classe_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/edt/cours', json={
+        'id_matiere': setup['matiere'].id,
+        'id_prof': setup['prof'].id,
+        'id_classe': 9999,
+        'debut': '2026-04-08T08:00:00',
+        'fin': '2026-04-08T10:00:00',
+    })
+    assert response.status_code == 404
+
+
+def test_create_cours_salle_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/edt/cours', json={
+        'id_matiere': setup['matiere'].id,
+        'id_prof': setup['prof'].id,
+        'id_classe': setup['classe'].id,
+        'debut': '2026-04-08T08:00:00',
+        'fin': '2026-04-08T10:00:00',
+        'id_salle': 9999,
+    })
+    assert response.status_code == 404
+
+
+# --- PATCH /edt/cours : cas limites ---
+
+def test_update_cours_non_direction_forbidden(client, employe_user, setup):
+    # employé non-direction => 403
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'etat': 'annulé'
+    })
+    assert response.status_code == 403
+
+
+def test_update_cours_no_json(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(
+        f'/edt/cours/{setup["cours"].id}',
+        data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_update_cours_invalid_date(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'debut': 'pas-une-date',
+        'fin': '2026-04-07T11:00:00',
+    })
+    assert response.status_code == 400
+
+
+def test_update_cours_fin_before_debut(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'debut': '2026-04-07T10:00:00',
+        'fin': '2026-04-07T08:00:00',
+    })
+    assert response.status_code == 400
+
+
+def test_update_cours_matiere_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'id_matiere': 9999
+    })
+    assert response.status_code == 404
+
+
+def test_update_cours_prof_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'id_prof': 9999
+    })
+    assert response.status_code == 404
+
+
+def test_update_cours_classe_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'id_classe': 9999
+    })
+    assert response.status_code == 404
+
+
+def test_update_cours_salle_not_found(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'id_salle': 9999
+    })
+    assert response.status_code == 404
+
+
+def test_update_cours_invalid_etat(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
+        'etat': 'inconnu'
+    })
+    assert response.status_code == 400
+
+
+# --- DELETE /edt/cours : cas limites ---
+
+def test_delete_cours_non_direction_forbidden(client, employe_user, setup):
+    # employé non-direction => 403
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.delete(f'/edt/cours/{setup["cours"].id}')
+    assert response.status_code == 403
+
+
+# --- GET /edt/matieres, /edt/classes, /edt/profs, /edt/salles ---
+
+def test_list_matieres_admin(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get('/edt/matieres')
+    assert response.status_code == 200
+    assert any(m['nom'] == 'Mathématiques' for m in response.get_json())
+
+
+def test_list_matieres_non_direction_forbidden(client, employe_user):
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.get('/edt/matieres')
+    assert response.status_code == 403
+
+
+def test_list_classes_admin(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get('/edt/classes')
+    assert response.status_code == 200
+    assert len(response.get_json()) >= 1
+
+
+def test_list_classes_non_direction_forbidden(client, employe_user):
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.get('/edt/classes')
+    assert response.status_code == 403
+
+
+def test_list_profs_admin(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get('/edt/profs')
+    assert response.status_code == 200
+    assert len(response.get_json()) >= 1
+
+
+def test_list_profs_non_direction_forbidden(client, employe_user):
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.get('/edt/profs')
+    assert response.status_code == 403
+
+
+def test_list_salles_admin(client, admin, setup):
+    client.post('/auth/login', json={
+        'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get('/edt/salles')
+    assert response.status_code == 200
+    assert len(response.get_json()) >= 1
+
+
+def test_list_salles_non_direction_forbidden(client, employe_user):
+    client.post('/auth/login', json={
+        'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
+    })
+    response = client.get('/edt/salles')
+    assert response.status_code == 403

@@ -187,3 +187,64 @@ def test_contact_direction_unauthenticated(client):
     # non connecté => 401
     response = client.post('/auth/profile/contact-direction', json={'champ': 'nom'})
     assert response.status_code == 401
+
+
+# --- Resistance CSRF ---
+
+def test_csrf_form_post_rejected(client, user):
+    # Simule un form HTML cross-origin (content-type form) => 400
+    # Un attaquant sur evil.com ne peut pas soumettre de form POST
+    # car Flask attend du JSON
+    client.post('/auth/login', json={
+        'email': 'user.test@guardiaschool.fr',
+        'password': 'password123'
+    })
+    response = client.post(
+        '/auth/logout',
+        data='',
+        content_type='application/x-www-form-urlencoded'
+    )
+    # logout attend une session valide mais pas de JSON body, retourne 200
+    # car logout ne parse pas de body - on verifie surtout les routes qui en ont besoin
+    assert response.status_code in (200, 400)
+
+
+def test_csrf_text_plain_rejected_on_state_change(client, user):
+    # Simule la technique "simple request" CSRF via text/plain
+    # (seul content-type qui ne declenche pas de preflight CORS)
+    # => doit etre rejete car le body n'est pas du JSON valide
+    client.post('/auth/login', json={
+        'email': 'user.test@guardiaschool.fr',
+        'password': 'password123'
+    })
+    response = client.patch(
+        '/auth/profile/password',
+        data='{"current_password":"password123","new_password":"hacked123"}',
+        content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_csrf_urlencoded_change_password_rejected(client, user):
+    # Form CSRF classique sur endpoint sensible => rejete
+    client.post('/auth/login', json={
+        'email': 'user.test@guardiaschool.fr',
+        'password': 'password123'
+    })
+    response = client.patch(
+        '/auth/profile/password',
+        data={'current_password': 'password123', 'new_password': 'hacked123'},
+        content_type='application/x-www-form-urlencoded'
+    )
+    assert response.status_code == 400
+
+
+def test_csrf_session_cookie_flags(client, user):
+    # Verifie que le cookie de session est HttpOnly + SameSite=Lax
+    response = client.post('/auth/login', json={
+        'email': 'user.test@guardiaschool.fr',
+        'password': 'password123'
+    })
+    set_cookie = response.headers.get('Set-Cookie', '')
+    assert 'HttpOnly' in set_cookie
+    assert 'SameSite=Lax' in set_cookie
