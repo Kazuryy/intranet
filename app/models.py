@@ -199,9 +199,9 @@ class Cours(db.Model):
     debut = db.Column(db.DateTime, nullable=False)
     fin = db.Column(db.DateTime, nullable=False)
     etat = db.Column(
-        db.Enum('planifié', 'en cours', 'terminé', 'annulé'),
+        db.Enum('planifie', 'en cours', 'termine', 'annule'),
         nullable=False,
-        default='planifié'
+        default='planifie'
     )
     id_salle = db.Column(
         db.Integer, db.ForeignKey('salle.id', ondelete='SET NULL'), nullable=True
@@ -223,7 +223,7 @@ class Devoir(db.Model):
         db.Integer, db.ForeignKey('matiere.id', ondelete='RESTRICT'), nullable=False
     )
     type = db.Column(
-        db.Enum('exercice', 'soutenance', 'exposé', 'contrôle', 'autre'),
+        db.Enum('exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre'),
         nullable=False
     )
     date_limite = db.Column(db.DateTime, nullable=False)
@@ -309,6 +309,17 @@ class Assiduite(db.Model):
         db.Enum('absent', 'retard', 'présent', 'excusé'), nullable=False
     )
     date = db.Column(db.DateTime, nullable=False)
+
+
+class SessionAuth(db.Model):
+    __tablename__ = 'session'
+
+    id = db.Column(db.Integer, primary_key=True)
+    suid = db.Column(db.String(36), unique=True, nullable=False)
+    id_user = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
+    )
+    expire_le = db.Column(db.DateTime, nullable=False)
 
 
 class Log(db.Model):

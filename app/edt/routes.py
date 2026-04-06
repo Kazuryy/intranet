@@ -61,7 +61,7 @@ def _norm_dt(dt):
     return dt.replace(tzinfo=timezone.utc) if dt and dt.tzinfo is None else dt
 
 
-ALLOWED_ETATS = {'planifié', 'en cours', 'terminé', 'annulé'}
+ALLOWED_ETATS = {'planifie', 'en cours', 'termine', 'annule'}
 
 
 @edt_bp.get('/cours')
@@ -175,7 +175,7 @@ def create_cours():
     if id_salle and not db.session.get(Salle, id_salle):
         return jsonify({'error': 'Salle introuvable'}), 404
 
-    etat = data.get('etat', 'planifié')
+    etat = data.get('etat', 'planifie')
     if etat not in ALLOWED_ETATS:
         return jsonify({'error': 'État invalide'}), 400
 

@@ -77,7 +77,7 @@ def setup(app):
             id_classe=classe.id,
             debut=datetime(2026, 4, 7, 8, 0),
             fin=datetime(2026, 4, 7, 10, 0),
-            etat='planifié',
+            etat='planifie',
             id_salle=salle.id
         )
         db.session.add(cours)
@@ -225,7 +225,7 @@ def test_create_cours_success(client, admin, setup):
     })
     assert response.status_code == 201
     data = response.get_json()
-    assert data['etat'] == 'planifié'
+    assert data['etat'] == 'planifie'
     assert data['matiere']['nom'] == 'Mathématiques'
 
 
@@ -338,17 +338,17 @@ def test_update_cours_success(client, admin, setup):
         'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
     })
     response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
-        'etat': 'annulé'
+        'etat': 'annule'
     })
     assert response.status_code == 200
-    assert response.get_json()['etat'] == 'annulé'
+    assert response.get_json()['etat'] == 'annule'
 
 
 def test_update_cours_not_found(client, admin):
     client.post('/auth/login', json={
         'email': 'admin.edt@guardiaschool.fr', 'password': 'adminpass'
     })
-    response = client.patch('/edt/cours/9999', json={'etat': 'annulé'})
+    response = client.patch('/edt/cours/9999', json={'etat': 'annule'})
     assert response.status_code == 404
 
 
@@ -365,7 +365,7 @@ def test_update_cours_direction_allowed(client, direction_user, setup):
         'email': 'dir.edt@guardiaschool.fr', 'password': 'dirpass'
     })
     response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
-        'etat': 'annulé'
+        'etat': 'annule'
     })
     assert response.status_code == 200
 
@@ -396,7 +396,7 @@ def test_update_cours_forbidden(client, eleve_user, setup):
     client.post('/auth/login', json={
         'email': 'jean.dupont.edt@guardiaschool.fr', 'password': 'elevepass'
     })
-    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={'etat': 'annulé'})
+    response = client.patch(f'/edt/cours/{setup["cours"].id}', json={'etat': 'annule'})
     assert response.status_code == 403
 
 
@@ -629,7 +629,7 @@ def test_update_cours_non_direction_forbidden(client, employe_user, setup):
         'email': 'cantine2.edt@guardiaschool.fr', 'password': 'cantinepass2'
     })
     response = client.patch(f'/edt/cours/{setup["cours"].id}', json={
-        'etat': 'annulé'
+        'etat': 'annule'
     })
     assert response.status_code == 403
 

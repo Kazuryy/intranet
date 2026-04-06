@@ -218,7 +218,7 @@ def seed_prof(app):
             id_classe=classe.id,
             debut=datetime(2026, 1, 10, 8, 0),
             fin=datetime(2026, 1, 10, 10, 0),
-            etat='planifié',
+            etat='planifie',
             id_salle=salle.id,
         )
         db.session.add(cours)
