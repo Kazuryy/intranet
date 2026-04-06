@@ -3,7 +3,9 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
 from . import edt_bp
-from ..models import db, Batiment, Classe, Cours, Eleve, Etage, Log, Matiere, Parent, Prof, Salle, User
+from ..models import (
+    db, Classe, Cours, Eleve, Log, Matiere, Parent, Prof, Salle, User
+)
 from ..decorators import is_direction, role_required
 
 
@@ -298,7 +300,9 @@ def list_matieres():
 def list_classes():
     if current_user.type == 'employé' and not is_direction():
         return jsonify({'error': 'Accès refusé'}), 403
-    classes = Classe.query.order_by(Classe.annee.desc(), Classe.niveau, Classe.suffixe).all()
+    classes = Classe.query.order_by(
+        Classe.annee.desc(), Classe.niveau, Classe.suffixe
+    ).all()
     return jsonify([{
         'id': c.id,
         'label': f'{c.niveau}{c.suffixe or ""} ({c.annee})'

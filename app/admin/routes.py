@@ -285,7 +285,11 @@ def unset_prof(user_id):
 def prof_status(user_id):
     prof = Prof.query.filter_by(id_user=user_id).first()
     matieres = [{'id': m.id, 'nom': m.nom} for m in prof.matieres] if prof else []
-    return jsonify({'is_prof': prof is not None, 'id_prof': prof.id if prof else None, 'matieres': matieres}), 200
+    return jsonify({
+        'is_prof': prof is not None,
+        'id_prof': prof.id if prof else None,
+        'matieres': matieres,
+    }), 200
 
 
 @admin_bp.post('/users/<int:user_id>/prof-matieres')
@@ -382,7 +386,9 @@ def _classe_to_dict(c):
 @login_required
 @role_required('administrateur')
 def list_classes():
-    classes = Classe.query.order_by(Classe.annee.desc(), Classe.niveau, Classe.suffixe).all()
+    classes = Classe.query.order_by(
+        Classe.annee.desc(), Classe.niveau, Classe.suffixe
+    ).all()
     return jsonify([_classe_to_dict(c) for c in classes]), 200
 
 

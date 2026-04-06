@@ -1,6 +1,6 @@
 import pytest
 from app import bcrypt
-from app.models import Batiment, Classe, Etage, Matiere, Prof, Salle, User, db
+from app.models import Batiment, Classe, Etage, Matiere, Salle, User, db
 
 
 @pytest.fixture
@@ -209,7 +209,9 @@ def test_list_classes_unauthenticated(client):
 
 def test_create_classe_success(client, admin):
     login_admin(client)
-    res = client.post('/admin/classes', json={'niveau': 2, 'suffixe': 'B', 'annee': 2026})
+    res = client.post(
+        '/admin/classes', json={'niveau': 2, 'suffixe': 'B', 'annee': 2026}
+    )
     assert res.status_code == 201
     data = res.get_json()
     assert data['niveau'] == 2
@@ -250,7 +252,9 @@ def test_create_classe_unauthenticated(client):
 
 def test_update_classe_success(client, admin, classe):
     login_admin(client)
-    res = client.patch(f'/admin/classes/{classe.id}', json={'suffixe': 'C', 'annee': 2027})
+    res = client.patch(
+        f'/admin/classes/{classe.id}', json={'suffixe': 'C', 'annee': 2027}
+    )
     assert res.status_code == 200
     data = res.get_json()
     assert data['suffixe'] == 'C'
