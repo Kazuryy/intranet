@@ -22,8 +22,8 @@ def _log(action, target_id=None):
 def _cours_to_dict(c):
     return {
         'id': c.id,
-        'debut': c.debut.isoformat(),
-        'fin': c.fin.isoformat(),
+        'debut': c.debut.isoformat() + 'Z',
+        'fin': c.fin.isoformat() + 'Z',
         'etat': c.etat,
         'matiere': {'id': c.id_matiere, 'nom': c.matiere.nom if c.matiere else None},
         'classe': {

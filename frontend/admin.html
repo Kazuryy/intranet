@@ -17,15 +17,15 @@
         </div>
         <div class="h-[6vh] bg-indigo-900 flex items-center justify-between px-4">
             <nav class="flex items-center">
-                <button data-href="index.html"
+                <button data-href="/"
                     class="nav-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:bg-white hover:text-indigo-900 hover:border-red-500 transition">
                     Accueil
                 </button>
-                <button data-href="edt.html"
+                <button data-href="/edt"
                     class="nav-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:bg-white hover:text-indigo-900 hover:border-red-500 transition">
                     Emploi du temps
                 </button>
-                <button data-href="admin.html"
+                <button data-href="/admin"
                     class="nav-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-red-500 bg-white/10">
                     Administration
                 </button>
@@ -34,6 +34,17 @@
     </div>
 
     <div class="flex-1 p-6">
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-5 border-b border-indigo-200">
+            <button data-tab="comptes" class="admin-tab px-4 py-2 text-sm font-bold text-indigo-900 border-b-2 border-indigo-900 -mb-px">Comptes</button>
+            <button data-tab="classes" class="admin-tab px-4 py-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-indigo-900 transition">Classes</button>
+            <button data-tab="matieres" class="admin-tab px-4 py-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-indigo-900 transition">Matières</button>
+            <button data-tab="salles" class="admin-tab px-4 py-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-indigo-900 transition">Salles</button>
+        </div>
+
+        <!-- ── Section Comptes ─────────────────────────────────────────────── -->
+        <div id="section-comptes">
 
         <!-- En-tête -->
         <div class="mb-5 flex items-center justify-between">
@@ -97,6 +108,191 @@
         </div>
 
         <p id="users-count" class="text-xs text-slate-400 mt-2 text-right"></p>
+        </div><!-- /section-comptes -->
+
+        <!-- ── Section Classes ────────────────────────────────────────────── -->
+        <div id="section-classes" class="hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Classes</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Gérez les classes de l'établissement.</p>
+                </div>
+                <button id="btn-new-classe"
+                    class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Nouvelle classe
+                </button>
+            </div>
+            <div id="classes-error" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="classes-error-msg"></span>
+            </div>
+            <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-indigo-900/10 border-b border-white/60">
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Niveau</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Suffixe</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Année</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Prof principal</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classes-tbody">
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /section-classes -->
+
+        <!-- ── Section Matières ───────────────────────────────────────────── -->
+        <div id="section-matieres" class="hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Matières</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Gérez les matières enseignées.</p>
+                </div>
+                <button id="btn-new-matiere"
+                    class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Nouvelle matière
+                </button>
+            </div>
+            <div id="matieres-error" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="matieres-error-msg"></span>
+            </div>
+            <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-indigo-900/10 border-b border-white/60">
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Nom</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matieres-tbody">
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /section-matieres -->
+
+        <!-- ── Section Salles ─────────────────────────────────────────────── -->
+        <div id="section-salles" class="hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Salles</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Gérez les salles de l'établissement.</p>
+                </div>
+                <button id="btn-new-salle"
+                    class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Nouvelle salle
+                </button>
+            </div>
+            <div id="salles-error" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="salles-error-msg"></span>
+            </div>
+            <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-indigo-900/10 border-b border-white/60">
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Nom</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salles-tbody">
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /section-salles -->
+
+    </div><!-- /flex-1 p-6 -->
+
+    <!-- Modal : nouvelle classe -->
+    <div id="modal-classe" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 id="modal-classe-title" class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvelle classe</h3>
+            <div id="classe-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="classe-error-msg"></span>
+            </div>
+            <input type="hidden" id="classe-id">
+            <form id="form-classe" novalidate>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Niveau (année)</label>
+                    <input id="classe-niveau" type="number" min="1" max="10" required placeholder="ex: 1"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Suffixe (groupe)</label>
+                    <input id="classe-suffixe" type="text" maxlength="10" placeholder="ex: A, B, C"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Année scolaire</label>
+                    <input id="classe-annee" type="number" min="2020" max="2100" required placeholder="ex: 2026"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Prof principal (optionnel)</label>
+                    <select id="classe-prof" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucun --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-classe" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-classe" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="classe-btn-text">Créer</span>
+                        <i id="classe-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal : nouvelle matière -->
+    <div id="modal-matiere" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 id="modal-matiere-title" class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvelle matière</h3>
+            <div id="matiere-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="matiere-error-msg"></span>
+            </div>
+            <input type="hidden" id="matiere-id">
+            <form id="form-matiere" novalidate>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Nom</label>
+                    <input id="matiere-nom" type="text" required maxlength="100" placeholder="ex: Mathématiques"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-matiere" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-matiere" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="matiere-btn-text">Créer</span>
+                        <i id="matiere-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal : nouvelle salle -->
+    <div id="modal-salle" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvelle salle</h3>
+            <div id="salle-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="salle-error-msg"></span>
+            </div>
+            <form id="form-salle" novalidate>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Nom</label>
+                    <input id="salle-nom" type="text" required maxlength="100" placeholder="ex: A101, Labo Info"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-salle" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-salle" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span>Créer</span>
+                        <i id="salle-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Modal : nouvel utilisateur -->
@@ -729,15 +925,285 @@
             }
         }
 
-        // ---- Déconnexion ----
         // ---- Vérification rôle admin ----
         async function checkRole() {
             const res = await fetch('/auth/me');
             if (!res.ok) return;
             const data = await res.json();
             if (data.type !== 'administrateur') {
-                window.location.replace('/index.html');
+                window.location.replace('/');
             }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                    NAVIGATION TABS                           ║
+        // ════════════════════════════════════════════════════════════════
+
+        const SECTIONS = ['comptes', 'classes', 'matieres', 'salles'];
+        const sectionLoaded = {};
+
+        function switchTab(tab) {
+            SECTIONS.forEach(s => {
+                document.getElementById(`section-${s}`).classList.toggle('hidden', s !== tab);
+            });
+            document.querySelectorAll('.admin-tab').forEach(btn => {
+                const active = btn.dataset.tab === tab;
+                btn.classList.toggle('text-indigo-900', active);
+                btn.classList.toggle('border-indigo-900', active);
+                btn.classList.toggle('text-slate-500', !active);
+                btn.classList.toggle('border-transparent', !active);
+            });
+            if (!sectionLoaded[tab]) {
+                sectionLoaded[tab] = true;
+                if (tab === 'classes') { loadClasses(); loadProfsForSelect(); }
+                if (tab === 'matieres') loadMatieres();
+                if (tab === 'salles') loadSalles();
+            }
+        }
+
+        document.querySelectorAll('.admin-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                      CLASSES                                 ║
+        // ════════════════════════════════════════════════════════════════
+
+        async function loadClasses() {
+            const tbody = document.getElementById('classes-tbody');
+            try {
+                const res = await fetch('/admin/classes');
+                const data = await res.json();
+                if (!res.ok) { tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-500 text-xs">${data.error}</td></tr>`; return; }
+                if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-400 text-xs">Aucune classe</td></tr>'; return; }
+                tbody.innerHTML = data.map(c => `
+                    <tr class="border-b border-white/40 hover:bg-white/20 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-800">${c.niveau}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${c.suffixe || '-'}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${c.annee}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${c.prof_principal ? `${c.prof_principal.prenom} ${c.prof_principal.nom}` : '-'}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="openEditClasse(${c.id})" class="text-xs text-indigo-600 hover:text-indigo-900 font-semibold mr-3">Modifier</button>
+                            <button onclick="deleteClasse(${c.id})" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
+            } catch { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-red-400 text-xs">Erreur de connexion</td></tr>'; }
+        }
+
+        let profsCache = [];
+        async function loadProfsForSelect() {
+            const res = await fetch('/edt/profs').catch(() => null);
+            if (!res || !res.ok) return;
+            profsCache = await res.json();
+            const sel = document.getElementById('classe-prof');
+            sel.innerHTML = '<option value="">-- Aucun --</option>' + profsCache.map(p => `<option value="${p.id}">${p.prenom} ${p.nom}</option>`).join('');
+        }
+
+        let editingClasseId = null;
+
+        function openNewClasse() {
+            editingClasseId = null;
+            document.getElementById('classe-id').value = '';
+            document.getElementById('form-classe').reset();
+            document.getElementById('modal-classe-title').textContent = 'Nouvelle classe';
+            document.getElementById('classe-btn-text').textContent = 'Créer';
+            document.getElementById('classe-error').classList.add('hidden');
+            document.getElementById('classe-annee').value = new Date().getFullYear();
+            document.getElementById('modal-classe').classList.remove('hidden');
+        }
+
+        async function openEditClasse(id) {
+            const res = await fetch('/admin/classes');
+            if (!res.ok) return;
+            const classes = await res.json();
+            const c = classes.find(x => x.id === id);
+            if (!c) return;
+            editingClasseId = id;
+            document.getElementById('classe-id').value = id;
+            document.getElementById('classe-niveau').value = c.niveau;
+            document.getElementById('classe-suffixe').value = c.suffixe || '';
+            document.getElementById('classe-annee').value = c.annee;
+            document.getElementById('classe-prof').value = c.prof_principal?.id || '';
+            document.getElementById('modal-classe-title').textContent = 'Modifier la classe';
+            document.getElementById('classe-btn-text').textContent = 'Enregistrer';
+            document.getElementById('classe-error').classList.add('hidden');
+            document.getElementById('modal-classe').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-new-classe').addEventListener('click', openNewClasse);
+        document.getElementById('btn-cancel-classe').addEventListener('click', () => document.getElementById('modal-classe').classList.add('hidden'));
+
+        document.getElementById('form-classe').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('classe-error');
+            const errMsg = document.getElementById('classe-error-msg');
+            errEl.classList.add('hidden');
+
+            const niveau = parseInt(document.getElementById('classe-niveau').value);
+            const suffixe = document.getElementById('classe-suffixe').value.trim();
+            const annee = parseInt(document.getElementById('classe-annee').value);
+            const id_prof_principal = parseInt(document.getElementById('classe-prof').value) || null;
+
+            if (!niveau || !annee) { errMsg.textContent = 'Niveau et année sont requis.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btn-submit-classe');
+            const spinner = document.getElementById('classe-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            try {
+                const url = editingClasseId ? `/admin/classes/${editingClasseId}` : '/admin/classes';
+                const method = editingClasseId ? 'PATCH' : 'POST';
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niveau, suffixe, annee, id_prof_principal }) });
+                const data = await res.json();
+                if (!res.ok) { errMsg.textContent = data.error || 'Erreur serveur.'; errEl.classList.remove('hidden'); return; }
+                document.getElementById('modal-classe').classList.add('hidden');
+                loadClasses();
+            } catch { errMsg.textContent = 'Impossible de joindre le serveur.'; errEl.classList.remove('hidden'); }
+            finally { btn.disabled = false; spinner.classList.add('hidden'); }
+        });
+
+        async function deleteClasse(id) {
+            if (!confirm('Supprimer cette classe ?')) return;
+            const res = await fetch(`/admin/classes/${id}`, { method: 'DELETE' });
+            if (res.ok) { loadClasses(); } else { const d = await res.json(); alert(d.error || 'Erreur'); }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                      MATIÈRES                                ║
+        // ════════════════════════════════════════════════════════════════
+
+        async function loadMatieres() {
+            const tbody = document.getElementById('matieres-tbody');
+            try {
+                const res = await fetch('/admin/matieres');
+                const data = await res.json();
+                if (!res.ok) { tbody.innerHTML = `<tr><td colspan="2" class="px-4 py-6 text-center text-red-500 text-xs">${data.error}</td></tr>`; return; }
+                if (!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-slate-400 text-xs">Aucune matière</td></tr>'; return; }
+                tbody.innerHTML = data.map(m => `
+                    <tr class="border-b border-white/40 hover:bg-white/20 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-800">${escHtml(m.nom)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="openEditMatiere(${m.id}, '${escAttr(m.nom)}')" class="text-xs text-indigo-600 hover:text-indigo-900 font-semibold mr-3">Modifier</button>
+                            <button onclick="deleteMatiere(${m.id})" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
+            } catch { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-red-400 text-xs">Erreur de connexion</td></tr>'; }
+        }
+
+        function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function escAttr(s) { return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
+        let editingMatiereId = null;
+
+        function openNewMatiere() {
+            editingMatiereId = null;
+            document.getElementById('matiere-id').value = '';
+            document.getElementById('matiere-nom').value = '';
+            document.getElementById('modal-matiere-title').textContent = 'Nouvelle matière';
+            document.getElementById('matiere-btn-text').textContent = 'Créer';
+            document.getElementById('matiere-error').classList.add('hidden');
+            document.getElementById('modal-matiere').classList.remove('hidden');
+        }
+
+        function openEditMatiere(id, nom) {
+            editingMatiereId = id;
+            document.getElementById('matiere-id').value = id;
+            document.getElementById('matiere-nom').value = nom;
+            document.getElementById('modal-matiere-title').textContent = 'Modifier la matière';
+            document.getElementById('matiere-btn-text').textContent = 'Enregistrer';
+            document.getElementById('matiere-error').classList.add('hidden');
+            document.getElementById('modal-matiere').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-new-matiere').addEventListener('click', openNewMatiere);
+        document.getElementById('btn-cancel-matiere').addEventListener('click', () => document.getElementById('modal-matiere').classList.add('hidden'));
+
+        document.getElementById('form-matiere').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('matiere-error');
+            const errMsg = document.getElementById('matiere-error-msg');
+            errEl.classList.add('hidden');
+
+            const nom = document.getElementById('matiere-nom').value.trim();
+            if (!nom) { errMsg.textContent = 'Nom requis.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btn-submit-matiere');
+            const spinner = document.getElementById('matiere-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            try {
+                const url = editingMatiereId ? `/admin/matieres/${editingMatiereId}` : '/admin/matieres';
+                const method = editingMatiereId ? 'PATCH' : 'POST';
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom }) });
+                const data = await res.json();
+                if (!res.ok) { errMsg.textContent = data.error || 'Erreur serveur.'; errEl.classList.remove('hidden'); return; }
+                document.getElementById('modal-matiere').classList.add('hidden');
+                loadMatieres();
+            } catch { errMsg.textContent = 'Impossible de joindre le serveur.'; errEl.classList.remove('hidden'); }
+            finally { btn.disabled = false; spinner.classList.add('hidden'); }
+        });
+
+        async function deleteMatiere(id) {
+            if (!confirm('Supprimer cette matière ?')) return;
+            const res = await fetch(`/admin/matieres/${id}`, { method: 'DELETE' });
+            if (res.ok) { loadMatieres(); } else { const d = await res.json(); alert(d.error || 'Erreur'); }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                       SALLES                                 ║
+        // ════════════════════════════════════════════════════════════════
+
+        async function loadSalles() {
+            const tbody = document.getElementById('salles-tbody');
+            try {
+                const res = await fetch('/admin/salles');
+                const data = await res.json();
+                if (!res.ok) { tbody.innerHTML = `<tr><td colspan="2" class="px-4 py-6 text-center text-red-500 text-xs">${data.error}</td></tr>`; return; }
+                if (!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-slate-400 text-xs">Aucune salle</td></tr>'; return; }
+                tbody.innerHTML = data.map(s => `
+                    <tr class="border-b border-white/40 hover:bg-white/20 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-800">${escHtml(s.nom)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="deleteSalle(${s.id})" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
+            } catch { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-red-400 text-xs">Erreur de connexion</td></tr>'; }
+        }
+
+        document.getElementById('btn-new-salle').addEventListener('click', () => {
+            document.getElementById('salle-nom').value = '';
+            document.getElementById('salle-error').classList.add('hidden');
+            document.getElementById('modal-salle').classList.remove('hidden');
+        });
+        document.getElementById('btn-cancel-salle').addEventListener('click', () => document.getElementById('modal-salle').classList.add('hidden'));
+
+        document.getElementById('form-salle').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('salle-error');
+            const errMsg = document.getElementById('salle-error-msg');
+            errEl.classList.add('hidden');
+
+            const nom = document.getElementById('salle-nom').value.trim();
+            if (!nom) { errMsg.textContent = 'Nom requis.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btn-submit-salle');
+            const spinner = document.getElementById('salle-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/admin/salles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom }) });
+                const data = await res.json();
+                if (!res.ok) { errMsg.textContent = data.error || 'Erreur serveur.'; errEl.classList.remove('hidden'); return; }
+                document.getElementById('modal-salle').classList.add('hidden');
+                loadSalles();
+            } catch { errMsg.textContent = 'Impossible de joindre le serveur.'; errEl.classList.remove('hidden'); }
+            finally { btn.disabled = false; spinner.classList.add('hidden'); }
+        });
+
+        async function deleteSalle(id) {
+            if (!confirm('Supprimer cette salle ?')) return;
+            const res = await fetch(`/admin/salles/${id}`, { method: 'DELETE' });
+            if (res.ok) { loadSalles(); } else { const d = await res.json(); alert(d.error || 'Erreur'); }
         }
 
         // ---- Init ----

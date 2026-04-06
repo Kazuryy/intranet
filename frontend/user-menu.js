@@ -1,17 +1,19 @@
-document.addEventListener('auth-ready', (e) => {
-    const user = e.detail;
+function escName(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
 
+function initUserMenu(user) {
     const ROLE_LABELS = {
-        'administrateur': { label: 'Admin',     cls: 'bg-purple-500' },
-        'employe':        { label: 'Employe',   cls: 'bg-blue-500'   },
-        'employé':        { label: 'Employe',   cls: 'bg-blue-500'   },
-        'eleve':          { label: 'Eleve',     cls: 'bg-green-500'  },
-        'élève':          { label: 'Eleve',     cls: 'bg-green-500'  },
-        'parent':         { label: 'Parent',    cls: 'bg-orange-500' },
+        'administrateur': { label: 'Admin',   cls: 'bg-purple-500' },
+        'employé':        { label: 'Employe', cls: 'bg-blue-500'   },
+        'élève':          { label: 'Eleve',   cls: 'bg-green-500'  },
+        'parent':         { label: 'Parent',  cls: 'bg-orange-500' },
     };
     const role = ROLE_LABELS[user.type] || { label: user.type, cls: 'bg-slate-500' };
 
-    // Trouver la barre indigo (2e div dans le premier header)
     const bar = document.querySelector('.bg-indigo-900.flex.items-center.justify-between');
     if (!bar) return;
 
@@ -39,7 +41,7 @@ document.addEventListener('auth-ready', (e) => {
             </div>
 
             ${user.type === 'administrateur' ? `
-            <a href="/admin.html"
+            <a href="/admin"
                 class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 transition">
                 <i class="fa-solid fa-users-gear w-3.5 text-center text-indigo-400"></i>
                 Administration
@@ -57,7 +59,6 @@ document.addEventListener('auth-ready', (e) => {
 
     bar.appendChild(menu);
 
-    // Toggle dropdown
     const btn = document.getElementById('user-menu-btn');
     const dropdown = document.getElementById('user-dropdown');
 
@@ -69,48 +70,38 @@ document.addEventListener('auth-ready', (e) => {
     document.addEventListener('click', () => dropdown.classList.add('hidden'));
     dropdown.addEventListener('click', (e) => e.stopPropagation());
 
-    // Logout
     document.getElementById('btn-logout').addEventListener('click', async () => {
         await fetch('/auth/logout', { method: 'POST' });
-        window.location.replace('/login.html');
+        window.location.replace('/login');
     });
 
-    // Marquer le lien admin actif si on est sur admin.html
-    const path = window.location.pathname;
-    if (path.endsWith('admin.html') && user.type === 'administrateur') {
-        const adminLink = menu.querySelector('a[href="/admin.html"]');
-        if (adminLink) adminLink.classList.add('bg-indigo-50', 'text-indigo-900');
+    // Marquer le lien admin actif sur /admin
+    if (window.location.pathname === '/admin' && user.type === 'administrateur') {
+        const adminLink = menu.querySelector('a[href="/admin"]');
+        if (adminLink) adminLink.classList.add('bg-indigo-50');
     }
-});
 
-function escName(str) {
-    return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    // Navigation nav-btn (admin n'inclut pas script.js)
+    document.querySelectorAll('.nav-btn[data-href]').forEach(b => {
+        b.addEventListener('click', () => { window.location.href = b.dataset.href; });
+    });
+
+    // Désactiver les liens vers des pages non implémentées
+    const DISPONIBLES = new Set(['/', '/edt', '/notes', '/admin', '/login', '/setup-password']);
+    document.querySelectorAll('[data-href]').forEach(el => {
+        const href = el.dataset.href;
+        if (!href || DISPONIBLES.has(href)) return;
+        el.removeAttribute('data-href');
+        el.style.opacity = '0.45';
+        el.style.cursor = 'not-allowed';
+        el.title = 'Bientot disponible';
+        el.addEventListener('click', e => e.stopImmediatePropagation());
+    });
 }
 
-// Navigation pour les boutons nav-btn (admin.html n'inclut pas script.js)
-document.querySelectorAll('.nav-btn[data-href]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        window.location.href = btn.dataset.href;
-    });
-});
-
-// Désactiver les liens vers des pages non encore implémentées
-const PAGES_DISPONIBLES = new Set([
-    'index.html', 'edt.html', 'notes.html', 'admin.html',
-    'login.html', 'setup-password.html'
-]);
-
-document.querySelectorAll('[data-href]').forEach(el => {
-    const href = el.dataset.href;
-    if (!href || PAGES_DISPONIBLES.has(href)) return;
-
-    // Désactiver visuellement
-    el.removeAttribute('data-href');
-    el.style.opacity = '0.45';
-    el.style.cursor = 'not-allowed';
-    el.title = 'Bientot disponible';
-    el.addEventListener('click', e => e.stopImmediatePropagation());
-});
+// Resilient : fonctionne que l'event ait déjà été dispatché ou pas encore
+if (window.__currentUser) {
+    initUserMenu(window.__currentUser);
+} else {
+    document.addEventListener('auth-ready', (e) => initUserMenu(e.detail));
+}

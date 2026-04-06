@@ -5,7 +5,7 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from . import admin_bp
-from ..models import db, Log, Matiere, Prof, User
+from ..models import db, Batiment, Classe, Etage, Log, Matiere, Prof, Salle, User
 from ..decorators import is_direction, role_required
 
 
@@ -306,3 +306,192 @@ def set_prof_matieres(user_id):
     _log('prof_matieres_updated', target_id=user_id)
     db.session.commit()
     return jsonify({'matieres': [{'id': m.id, 'nom': m.nom} for m in matieres]}), 200
+
+
+# ── Matières ─────────────────────────────────────────────────────
+
+@admin_bp.get('/matieres')
+@login_required
+@role_required('administrateur')
+def list_matieres():
+    matieres = Matiere.query.order_by(Matiere.nom).all()
+    return jsonify([{'id': m.id, 'nom': m.nom} for m in matieres]), 200
+
+
+@admin_bp.post('/matieres')
+@login_required
+@role_required('administrateur')
+def create_matiere():
+    data = request.get_json(silent=True)
+    if not data or not str(data.get('nom', '')).strip():
+        return jsonify({'error': 'Nom requis'}), 400
+    nom = str(data['nom']).strip()[:100]
+    if Matiere.query.filter_by(nom=nom).first():
+        return jsonify({'error': 'Cette matière existe déjà'}), 409
+    m = Matiere(nom=nom)
+    db.session.add(m)
+    db.session.commit()
+    return jsonify({'id': m.id, 'nom': m.nom}), 201
+
+
+@admin_bp.patch('/matieres/<int:mid>')
+@login_required
+@role_required('administrateur')
+def update_matiere(mid):
+    m = db.session.get(Matiere, mid)
+    if not m:
+        return jsonify({'error': 'Matière introuvable'}), 404
+    data = request.get_json(silent=True)
+    if not data or not str(data.get('nom', '')).strip():
+        return jsonify({'error': 'Nom requis'}), 400
+    m.nom = str(data['nom']).strip()[:100]
+    db.session.commit()
+    return jsonify({'id': m.id, 'nom': m.nom}), 200
+
+
+@admin_bp.delete('/matieres/<int:mid>')
+@login_required
+@role_required('administrateur')
+def delete_matiere(mid):
+    m = db.session.get(Matiere, mid)
+    if not m:
+        return jsonify({'error': 'Matière introuvable'}), 404
+    db.session.delete(m)
+    db.session.commit()
+    return jsonify({'message': 'Supprimée'}), 200
+
+
+# ── Classes ───────────────────────────────────────────────────────
+
+def _classe_to_dict(c):
+    prof = None
+    if c.id_prof_principal:
+        p = db.session.get(Prof, c.id_prof_principal)
+        if p and p.user:
+            prof = {'id': p.id, 'nom': p.user.nom, 'prenom': p.user.prenom}
+    return {
+        'id': c.id,
+        'niveau': c.niveau,
+        'suffixe': c.suffixe or '',
+        'annee': c.annee,
+        'prof_principal': prof,
+    }
+
+
+@admin_bp.get('/classes')
+@login_required
+@role_required('administrateur')
+def list_classes():
+    classes = Classe.query.order_by(Classe.annee.desc(), Classe.niveau, Classe.suffixe).all()
+    return jsonify([_classe_to_dict(c) for c in classes]), 200
+
+
+@admin_bp.post('/classes')
+@login_required
+@role_required('administrateur')
+def create_classe():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'JSON requis'}), 400
+    try:
+        niveau = int(data.get('niveau', 0))
+        annee = int(data.get('annee', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'niveau et annee doivent être des entiers'}), 400
+    if not niveau or not annee:
+        return jsonify({'error': 'niveau et annee requis'}), 400
+    suffixe = str(data.get('suffixe') or '').strip()[:10] or None
+    id_prof = data.get('id_prof_principal') or None
+    if id_prof and not db.session.get(Prof, id_prof):
+        return jsonify({'error': 'Prof introuvable'}), 404
+    c = Classe(niveau=niveau, suffixe=suffixe, annee=annee, id_prof_principal=id_prof)
+    db.session.add(c)
+    db.session.commit()
+    return jsonify(_classe_to_dict(c)), 201
+
+
+@admin_bp.patch('/classes/<int:cid>')
+@login_required
+@role_required('administrateur')
+def update_classe(cid):
+    c = db.session.get(Classe, cid)
+    if not c:
+        return jsonify({'error': 'Classe introuvable'}), 404
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'JSON requis'}), 400
+    if 'niveau' in data:
+        try:
+            c.niveau = int(data['niveau'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'niveau doit être un entier'}), 400
+    if 'annee' in data:
+        try:
+            c.annee = int(data['annee'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'annee doit être un entier'}), 400
+    if 'suffixe' in data:
+        c.suffixe = str(data['suffixe'] or '').strip()[:10] or None
+    if 'id_prof_principal' in data:
+        id_prof = data['id_prof_principal'] or None
+        if id_prof and not db.session.get(Prof, id_prof):
+            return jsonify({'error': 'Prof introuvable'}), 404
+        c.id_prof_principal = id_prof
+    db.session.commit()
+    return jsonify(_classe_to_dict(c)), 200
+
+
+@admin_bp.delete('/classes/<int:cid>')
+@login_required
+@role_required('administrateur')
+def delete_classe(cid):
+    c = db.session.get(Classe, cid)
+    if not c:
+        return jsonify({'error': 'Classe introuvable'}), 404
+    db.session.delete(c)
+    db.session.commit()
+    return jsonify({'message': 'Supprimée'}), 200
+
+
+# ── Salles ────────────────────────────────────────────────────────
+
+@admin_bp.get('/salles')
+@login_required
+@role_required('administrateur')
+def list_salles():
+    salles = Salle.query.order_by(Salle.nom).all()
+    return jsonify([{'id': s.id, 'nom': s.nom} for s in salles]), 200
+
+
+@admin_bp.post('/salles')
+@login_required
+@role_required('administrateur')
+def create_salle():
+    data = request.get_json(silent=True)
+    if not data or not str(data.get('nom', '')).strip():
+        return jsonify({'error': 'Nom requis'}), 400
+    nom = str(data['nom']).strip()[:100]
+    etage = Etage.query.first()
+    if not etage:
+        bat = Batiment(nom='Principal')
+        db.session.add(bat)
+        db.session.flush()
+        etage = Etage(numero=0, id_batiment=bat.id)
+        db.session.add(etage)
+        db.session.flush()
+    s = Salle(nom=nom, id_etage=etage.id)
+    db.session.add(s)
+    db.session.commit()
+    return jsonify({'id': s.id, 'nom': s.nom}), 201
+
+
+@admin_bp.delete('/salles/<int:sid>')
+@login_required
+@role_required('administrateur')
+def delete_salle(sid):
+    s = db.session.get(Salle, sid)
+    if not s:
+        return jsonify({'error': 'Salle introuvable'}), 404
+    db.session.delete(s)
+    db.session.commit()
+    return jsonify({'message': 'Supprimée'}), 200

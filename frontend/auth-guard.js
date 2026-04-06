@@ -5,7 +5,7 @@ document.documentElement.style.visibility = 'hidden';
     try {
         const res = await fetch('/auth/me');
         if (!res.ok) {
-            window.location.replace('/login.html');
+            window.location.replace('/login');
         } else {
             const user = await res.json();
             window.__currentUser = user;
@@ -13,6 +13,6 @@ document.documentElement.style.visibility = 'hidden';
             document.dispatchEvent(new CustomEvent('auth-ready', { detail: user }));
         }
     } catch {
-        window.location.replace('/login.html');
+        window.location.replace('/login');
     }
 })();
