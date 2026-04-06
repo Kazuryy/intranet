@@ -173,9 +173,8 @@ Une fois l'application lancée, des comptes de test sont disponibles :
 
 | Rôle | Email | Mot de passe |
 |---|---|---|
-| Admin | admin@guardia.fr | Admin1234! |
-| Professeur | prof@guardia.fr | Prof1234! |
-| Étudiant | etudiant@guardia.fr | Etudiant1234! |
+| Admin | admin@guardiaschool.fr | admin |
+
 
 ---
 
