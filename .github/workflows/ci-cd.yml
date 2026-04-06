@@ -148,21 +148,10 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Launch app
-        run: docker compose -f docker-compose.yml up -d
-
-      - name: wait for healthy status
-        run: |
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:5000/health && break
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-
       - name: run scan
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
-          target: 'http://localhost:5000'
+          target: 'http://temp2.guardiaroot.fr'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-I'
 
@@ -172,10 +161,6 @@ jobs:
         with:
           name: zap-scan-report
           path: report_html.html
-
-      - name: stop app
-        if: always()
-        run: docker compose -f docker-compose.yml down
 
   sonar:
     name: SonarCloud Scan
