@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 t.addEventListener('click', (e) => {
                     clearTimeout(hoverTimeout);
-                    resultatMenu.classList.add('hidden');
+                    if (resultatMenu) resultatMenu.classList.add('hidden');
                     if (resultatBtn) resultatBtn.setAttribute('aria-expanded','false');
                     activateTab(t, true);
                     // if a target href is provided, navigate to it
