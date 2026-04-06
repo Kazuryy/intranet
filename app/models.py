@@ -1,4 +1,7 @@
+import hashlib
+import hmac
 from datetime import datetime, timezone
+from flask import current_app
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -28,6 +31,14 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     setup_token = db.Column(db.String(100), unique=True, nullable=True)
     setup_token_expires = db.Column(db.DateTime, nullable=True)
+
+    def get_id(self):
+        # Dérive un token HMAC(SECRET_KEY, password_hash).
+        # N'expose pas le hash brut ; invalide la session si le compte est recréé.
+        secret = current_app.config['SECRET_KEY'].encode()
+        msg = (self.password or '').encode()
+        digest = hmac.new(secret, msg, hashlib.sha256).hexdigest()[:16]
+        return f"{self.id}.{digest}"
 
 
 class Information(db.Model):

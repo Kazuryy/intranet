@@ -22,12 +22,15 @@ def _log(action, user_id=None, target_type=None, target_id=None):
 @auth_bp.get('/me')
 @login_required
 def me():
+    from ..decorators import is_direction
+    direction = current_user.type == 'employé' and is_direction()
     return jsonify({
         'id': current_user.id,
         'nom': current_user.nom,
         'prenom': current_user.prenom,
         'type': current_user.type,
-        'mail_interne': current_user.mail_interne
+        'mail_interne': current_user.mail_interne,
+        'is_direction': direction,
     }), 200
 
 

@@ -3,356 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Site Web - Grille Uniforme</title>
+    <title>Travail à faire</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
     <script src="header.js" defer></script>
+    <script src="user-menu.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body class="m-0 font-sans text-slate-800">
 
     <div class="relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2" data-page="travail">
-        
-        <!-- ════════════════════════════════════════════════════════════════
-             ║              SÉLECTEUR DE SEMAINES                          ║
-             ════════════════════════════════════════════════════════════════ -->
+
+        <!-- Barre de filtres -->
         <div class="w-full bg-white shadow-md rounded-t-xl p-0">
-            <div class="flex items-center justify-between px-4 pt-2 pb-1 gap-4">
+            <div class="flex items-center justify-between px-4 pt-3 pb-2 gap-4">
                 <div class="flex items-center gap-3">
-                    <h2 class="text-sm font-bold text-indigo-900">Travail à faire</h2>
+                    <h2 class="text-base font-bold text-indigo-900">Travail à faire</h2>
+                    <button id="add-travail-btn" class="hidden px-3 py-1 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded transition-colors items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Ajouter</span>
+                    </button>
                 </div>
             </div>
             <div class="flex items-center gap-4 px-4 pb-3">
-                <!-- Interrupteur Vue -->
-                <div class="flex items-center bg-slate-200 rounded-lg">
-                    <button id="vue-chronologique-btn" class="px-4 py-1 text-[9px] font-semibold text-white bg-indigo-600 rounded-l transition-colors">Vue Chronologique</button>
-                    <button id="vue-hebdomadaire-btn" class="px-4 py-1 text-[9px] font-semibold text-slate-700 hover:bg-slate-300 rounded-r transition-colors">Vue Hebdomadaire</button>
-                </div>
-
-                <!-- Depuis + Date avec Calendrier -->
                 <div class="flex items-center gap-2">
-                    <span class="text-[9px] font-semibold text-slate-700">Depuis</span>
-                    <div class="relative">
-                        <button id="date-picker-btn" class="flex items-center gap-2 px-4 py-1 text-[9px] font-semibold border-2 border-indigo-200 bg-white text-indigo-900 hover:border-indigo-400 rounded transition-colors cursor-pointer">
-                            <i class="fas fa-calendar text-sm"></i>
-                            <span id="date-display">01/01/2025</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </button>
-                        
-                        <!-- Mini calendrier popup -->
-                        <div id="calendar-popup" class="hidden absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg p-4 z-50 w-64">
-                            <div class="flex items-center justify-between mb-4">
-                                <button id="prev-month-btn" class="text-indigo-600 hover:text-indigo-800 text-sm">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <h3 id="calendar-month" class="text-sm font-bold text-slate-800"></h3>
-                                <button id="next-month-btn" class="text-indigo-600 hover:text-indigo-800 text-sm">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="grid grid-cols-7 gap-1 mb-4">
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Lun</div>
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Mar</div>
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Mer</div>
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Jeu</div>
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Ven</div>
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Sam</div>
-                                <div class="text-[8px] font-bold text-slate-500 text-center">Dim</div>
-                            </div>
-                            
-                            <div id="calendar-days" class="grid grid-cols-7 gap-1 mb-4">
-                                <!-- Les jours seront générés par JS -->
-                            </div>
-                            
-                            <button id="close-calendar-btn" class="w-full px-3 py-1 text-[9px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded transition-colors">Fermer</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filtres Travail -->
-                <div class="flex items-center gap-2">
-                    <button id="filter-a-faire-btn" class="px-4 py-1 text-[9px] font-semibold text-white bg-indigo-600 hover:bg-slate-300 rounded transition-colors active-filter">Travail à faire</button>
-                    <button id="filter-fait-btn" class="px-4 py-1 text-[9px] font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded transition-colors">Travail fait</button>
+                    <button id="filter-a-faire-btn" class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded transition-colors">Travail à faire</button>
+                    <button id="filter-tout-btn" class="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded transition-colors">Tout voir</button>
                 </div>
             </div>
         </div>
 
-        <!-- ════════════════════════════════════════════════════════════════
-             ║              CONTENU PRINCIPAL                              ║
-             ════════════════════════════════════════════════════════════════ -->
-        <div class="w-full h-[85%] flex gap-2">
-            <!-- Colonne gauche 1/9 - Filtres/Catégories -->
+        <!-- Contenu principal -->
+        <div class="w-full flex-1 flex gap-2 overflow-hidden">
+
+            <!-- Colonne gauche : catégories -->
             <div class="flex-1 bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-bl-2xl overflow-hidden flex flex-col">
                 <div class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
-                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase mb-2">Catégories</h3>
-                    <button class="px-3 py-2 text-[9px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors text-left">Tous les devoirs</button>
-                    <button class="px-3 py-2 text-[9px] font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">À faire</button>
-                    <button class="px-3 py-2 text-[9px] font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Effectué</button>
-                    <button class="px-3 py-2 text-[9px] font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Évaluation</button>
+                    <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2">Catégories</h3>
+                    <button id="cat-tous-btn" class="px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors text-left">Tous les devoirs</button>
+                    <button id="cat-evaluation-btn" class="px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Évaluations</button>
+                    <button id="cat-rendu-btn" class="px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Avec rendu</button>
+                    <button id="cat-exercice-btn" class="px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Exercices</button>
                 </div>
             </div>
 
-            <!-- Colonne milieu 4/9 - Liste des devoirs -->
+            <!-- Colonne milieu : liste des devoirs -->
             <div class="flex-[4] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg overflow-hidden flex flex-col">
                 <div id="travail-list" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
-                    <!-- Travaux seront affichés ici -->
+                    <div class="text-center text-slate-400 text-sm py-4">Chargement...</div>
                 </div>
             </div>
 
-            <!-- Colonne droite 4/9 - Détails du travail + Évaluations -->
-            <div class="flex-[4] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-br-2xl overflow-hidden flex flex-col">
-                <!-- Section Évaluations -->
-                <div id="evals-section" class="border-b border-white/40 px-3 py-3 flex flex-col gap-2 bg-white/20">
-                    <!-- Les évaluations seront affichées ici -->
+            <!-- Colonne droite : évaluations à venir -->
+            <div class="flex-[3] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-br-2xl overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-white/40 bg-white/20">
+                    <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest">Évaluations à venir</h3>
                 </div>
-                
-                <!-- Section Détails du travail -->
+                <div id="evals-section" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+                    <!-- rempli par JS -->
+                </div>
             </div>
         </div>
     </div>
 
-    <style>
-        /* Remplace #notes-list par #mes-notes-list */
-        #mes-notes-list {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 0.25rem !important;
-        }
-
-        /* Note item styling */
-        .note-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0.5rem;
-            background: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            border: none;
-            border-left: 3px solid transparent;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .note-item:hover {
-            background: rgba(255, 255, 255, 0.8);
-            border-left-color: #e6aeae;
-        }
-
-        .note-item.active {
-            background: rgba(255, 255, 255, 0.9);
-            border-left-color: #ef4444;
-        }
-
-        .note-date-badge {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            height: 40px;
-            padding: 0;
-            border-radius: 0;
-            font-size: 0.6rem;
-            font-weight: 700;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            flex-shrink: 0;
-        }
-
-        .note-item-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .note-item-matiere {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #1e293b;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            line-height: 1.2;
-        }
-
-        .note-item-moyenne {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin-top: 0;
-            line-height: 1.2;
-        }
-
-        .note-item-value {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #6366f1;
-            min-width: 40px;
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        /* ... un peu plus bas pour la scrollbar ... */
-        #mes-notes-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #mes-notes-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #mes-notes-list::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        #mes-notes-list::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Details styling */
-        .details-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .details-header {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .details-matiere {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #1e293b;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-
-        .details-date {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .details-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 0.375rem;
-        }
-
-        .details-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .details-label.highlight {
-            color: #6366f1;
-        }
-
-        .details-value {
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .details-value.highlight {
-            color: #6366f1;
-            font-size: 1rem;
-        }
-    </style>
-
-    <script>
-        let notesData = [];
-        let couleursData = {};
-        let selectedNoteId = null;
-
-        // ════════════════════════════════════════════════════════════════
-        // Afficher les notes dans la liste
-        // ════════════════════════════════════════════════════════════════
-        function renderNotes() {
-            const container = document.getElementById('mes-notes-list'); 
-            container.innerHTML = notesData.map(note => `
-                <div class="note-item ${selectedNoteId === note.id ? 'active' : ''}" onclick="selectNote(${note.id})">
-                    <div class="note-date-badge" style="background-color: ${note.couleur};">
-                        <div>${note.jour}</div>
-                        <div>${note.mois}</div>
-                    </div>
-                    <div class="note-item-info">
-                        <div class="note-item-matiere">${note.matiere}</div>
-                        <div class="note-item-moyenne">Moyenne de la classe : ${note.moyenne}</div>
-                    </div>
-                    <div class="note-item-value">${note.note.toFixed(2)}</div>
+    <!-- Modal ajout devoir (visible uniquement pour les profs) -->
+    <div id="add-travail-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
+                <h2 class="text-lg font-bold">Ajouter un devoir</h2>
+                <button id="close-modal-btn" class="text-white hover:text-indigo-100 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Classe</label>
+                    <select id="devoir-classe" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                        <option value="">-- Sélectionner une classe --</option>
+                    </select>
                 </div>
-            `).join('');
-        }
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Matière</label>
+                    <select id="devoir-matiere" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                        <option value="">-- Sélectionner une matière --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Type</label>
+                    <select id="devoir-type" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                        <option value="exercice">Exercice</option>
+                        <option value="controle">Contrôle</option>
+                        <option value="expose">Exposé</option>
+                        <option value="projet">Projet</option>
+                        <option value="soutenance">Soutenance</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Consigne</label>
+                    <textarea id="devoir-consigne" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600" rows="3" placeholder="Description du travail..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Date limite</label>
+                    <input type="date" id="devoir-date-limite" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                </div>
+                <div id="modal-error" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg"></div>
+                <button id="create-devoir-btn" class="w-full px-4 py-2 bg-indigo-600 text-sm text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Créer le devoir
+                </button>
+            </div>
+        </div>
+    </div>
 
-        // ════════════════════════════════════════════════════════════════
-        // Afficher les détails d'une note
-        // ════════════════════════════════════════════════════════════════
-        function selectNote(id) {
-            selectedNoteId = id;
-            renderNotes();
-            
-            const note = notesData.find(n => n.id === id);
-            const detailsContainer = document.getElementById('details-content');
-            
-            if (note) {
-                detailsContainer.innerHTML = `
-                    <div class="details-container">
-                        <div class="details-header">
-                            <div class="details-matiere">${note.matiere}</div>
-                            <div class="details-date">Note du ${note.jour} ${note.mois} ${note.annee}</div>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label highlight">Note élève :</span>
-                            <span class="details-value highlight">${note.note.toFixed(2)}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Moyenne classe :</span>
-                            <span class="details-value">${note.moyenne}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Note la plus haute :</span>
-                            <span class="details-value">${note.plusHaute}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Note la plus basse :</span>
-                            <span class="details-value">${note.plusBasse}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Coefficient :</span>
-                            <span class="details-value">${note.coefficient}</span>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // ════════════════════════════════════════════════════════════════
-        // Initialisation
-        // ════════════════════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', () => {
-            // Les données seront chargées depuis l'API via script.js
-        });
-
-        // Écouter le changement de trimestre
-        document.getElementById('trimestre-select')?.addEventListener('change', async (e) => {
-            const trimestre = e.target.value;
-            // Filtrer les données selon le trimestre sélectionné
-        });
-    </script>
 </body>
 </html>

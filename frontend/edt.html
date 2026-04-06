@@ -7,36 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="auth-guard.js"></script>
+    <script src="header.js" defer></script>
     <script src="user-menu.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body class="m-0 font-sans text-slate-800">
     
-    <div class="h-[10vh] flex flex-col shadow-md z-50 relative">
-        <div class="h-[9vh] bg-white flex items-center justify-center">
-            <h1 class="m-0 text-3xl text-indigo-900 font-bold">PRONOTE V2 TEST</h1>
-        </div>
-        <div class="h-[6vh] bg-indigo-900 flex items-center justify-between">
-            <nav class="flex items-center" role="tablist" aria-label="Onglets principaux">
-                <button role="tab" data-tab="accueil" data-href="/" aria-selected="true"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Accueil
-                </button>
-                <button role="tab" data-tab="edt" data-href="/edt" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Emploi du temps
-                </button>
-                <button role="tab" data-tab="notes" data-href="/notes" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Notes
-                </button>
-                <button role="tab" data-tab="cahier-textes" data-href="/travail" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Cahier de textes
-                </button>
-            </nav>
-        </div>
-    </div>
 
     <div class="relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2">
         
@@ -46,11 +22,15 @@
         <div class="w-full bg-white shadow-md rounded-t-xl p-0">
             <div class="flex items-center justify-between px-4 pt-2 pb-1 gap-4">
                 <div class="flex items-center gap-3">
-                    <h2 class="text-sm font-bold text-indigo-900">Mon emploi du temps</h2>
+                    <h2 class="text-sm font-bold text-indigo-900" id="edt-page-title">Mon emploi du temps</h2>
                     <div id="week-info" class="text-sm font-bold text-slate-700 flex items-center gap-2">
                         <span id="week-dates">--</span>
                         <span id="week-type" class="px-3 py-1 rounded text-white text-xs">Semaine A</span>
                     </div>
+                    <!-- Sélecteur de classe (visible admin/direction uniquement, injecté par JS) -->
+                    <select id="edt-classe-select" class="hidden text-xs border border-slate-300 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:border-indigo-600">
+                        <option value="">Toutes les classes</option>
+                    </select>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btn-new-cours" class="hidden bg-indigo-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-800 transition flex items-center gap-1.5">
@@ -418,17 +398,12 @@
         // ── Role & bouton creation ─────────────────────────────────────────
         let selectsLoaded = false;
 
-        async function initRole() {
+        function initRole() {
             const user = window.__currentUser;
             if (!user) return;
 
-            const role = user.type;
-            const mayCreate = role === 'administrateur' || role === 'employé';
-            if (!mayCreate) return;
-
-            // Verifier cote serveur que l'acces aux listes est autorise
-            const probe = await fetch('/edt/matieres').catch(() => null);
-            if (!probe || !probe.ok) return;
+            const canManage = user.type === 'administrateur' || (user.type === 'employé' && user.is_direction);
+            if (!canManage) return;
 
             document.getElementById('btn-new-cours').classList.remove('hidden');
             document.getElementById('btn-new-cours').addEventListener('click', openCreateModal);
@@ -672,7 +647,9 @@
             const block = e.target.closest('.cours-block[data-cours-id]');
             if (!block) return;
             const user = window.__currentUser;
-            if (!user || (user.type !== 'administrateur' && user.type !== 'employé')) return;
+            if (!user) return;
+            const canEdit = user.type === 'administrateur' || (user.type === 'employé' && user.is_direction);
+            if (!canEdit) return;
             openEditModal(parseInt(block.dataset.coursId));
         });
 

@@ -87,7 +87,7 @@ function initUserMenu(user) {
     });
 
     // Désactiver les liens vers des pages non implémentées
-    const DISPONIBLES = new Set(['/', '/edt', '/notes', '/admin', '/login', '/setup-password']);
+    const DISPONIBLES = new Set(['/', '/edt', '/notes', '/travail', '/admin', '/login', '/setup-password']);
     document.querySelectorAll('[data-href]').forEach(el => {
         const href = el.dataset.href;
         if (!href || DISPONIBLES.has(href)) return;
