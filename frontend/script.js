@@ -2,6 +2,44 @@
 // ║                    DONNÉES & CONFIGURATION                    ║
 // ════════════════════════════════════════════════════════════════
 
+// ─── EDT API ────────────────────────────────────────────────────
+const JOUR_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+function apiToMock(c) {
+    const debut = new Date(c.debut);
+    const fin   = new Date(c.fin);
+    return {
+        _id:     c.id,
+        _raw:    c,
+        jour:    JOUR_NAMES[debut.getDay()],
+        debut:   debut.getHours() + debut.getMinutes() / 60,
+        fin:     fin.getHours()   + fin.getMinutes()   / 60,
+        matiere: c.matiere?.nom || 'Inconnu',
+        prof:    (c.prof?.prenom && c.prof?.nom) ? `${c.prof.prenom} ${c.prof.nom}` : '',
+        salle:   c.salle?.nom || '',
+        etat:    c.etat,
+        _annule: c.etat === 'annulé',
+    };
+}
+
+async function loadCours(startDate) {
+    const debut = new Date(startDate);
+    debut.setHours(0, 0, 0, 0);
+    const fin = new Date(startDate);
+    fin.setDate(fin.getDate() + 6);
+    fin.setHours(23, 59, 59, 999);
+    try {
+        const params = new URLSearchParams({ debut: debut.toISOString(), fin: fin.toISOString() });
+        const res = await fetch('/edt/cours?' + params.toString());
+        if (!res.ok) return;
+        const data = await res.json();
+        MOCK_COURS.splice(0, MOCK_COURS.length, ...data.map(apiToMock));
+        renderCours();
+    } catch (e) {
+        console.error('Erreur chargement EDT:', e);
+    }
+}
+
 // ─── MOCK SQL DATA / API CALLS ─────────────────────────────────
 const MOCK_COURS = [
     { jour: 'lundi',    debut: 8.0,  fin: 9.0,  matiere: 'Mathématiques',    prof: 'M. Dupont',    salle: 'A101' },
@@ -138,6 +176,7 @@ function renderCours() {
 
                     const block = document.createElement('div');
                     block.className = 'cours-block';
+                    if (cours._id) block.dataset.coursId = cours._id;
                     
                     // On injecte left et width en % au lieu de forcer à 4px du bord
                     block.style.cssText = `
@@ -254,11 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DONNÉES DE TEST POUR LES NOTES (À lier à SQL plus tard) ---
     const MOCK_NOTES = [
-        { id: 1, matiere: 'Mathématiques', date: '25/03/2026', note: 18.5, max: 20, jour: 25, mois: 'mars', annee: 2026, couleur: '#6366f1', moyenne: '16,5', plusHaute: 19, plusBasse: 8, coefficient: 4 },
-        { id: 2, matiere: 'Anglais', date: '24/03/2026', note: 14.0, max: 20, jour: 24, mois: 'mars', annee: 2026, couleur: '#10b981', moyenne: '15,2', plusHaute: 18, plusBasse: 10, coefficient: 2 },
-        { id: 3, matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20, jour: 20, mois: 'mars', annee: 2026, couleur: '#0ea5e9', moyenne: '12,8', plusHaute: 17, plusBasse: 6, coefficient: 3 },
-        { id: 4, matiere: 'Français', date: '19/03/2026', note: 16.0, max: 20, jour: 19, mois: 'mars', annee: 2026, couleur: '#ec4899', moyenne: '14,9', plusHaute: 19, plusBasse: 9, coefficient: 3 },
-        { id: 5, matiere: 'Histoire-Géo', date: '18/03/2026', note: 15.5, max: 20, jour: 18, mois: 'mars', annee: 2026, couleur: '#f59e0b', moyenne: '13,7', plusHaute: 18, plusBasse: 7, coefficient: 2 },
+        { matiere: 'Mathématiques', date: '25/03/2026', note: 18.5, max: 20 },
+        { matiere: 'Anglais', date: '24/03/2026', note: 14.0, max: 20 },
+        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
+        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
+        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
+        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
+        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
     ];
 
     // --- DONNÉES DE TEST POUR LES DEVOIRS ET DS ---
@@ -319,11 +360,14 @@ document.addEventListener('DOMContentLoaded', () => {
             row.className = 'flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0';
             
             const scoreBox = document.createElement('div');
-            scoreBox.className = `w-8 h-8 rounded border ${colorClass} flex items-center justify-center shadow-sm notes-score cursor-pointer text-[10px] font-bold`;
+            scoreBox.className = `w-10 h-10 rounded-lg border ${colorClass} flex flex-col items-center justify-center shadow-sm notes-score cursor-pointer`;
             scoreBox.setAttribute('data-note-index', itemIndex);
             scoreBox.setAttribute('data-hidden', 'false');
             scoreBox.setAttribute('data-color-class', colorClass);
-            scoreBox.innerHTML = `${item.note}`;
+            scoreBox.innerHTML = `
+                <span class="text-xs font-bold note-value">${item.note}</span>
+                <span class="text-[8px] opacity-70">/${item.max}</span>
+            `;
             
             const infoPart = document.createElement('div');
             infoPart.className = 'flex-1';
@@ -344,13 +388,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (isHidden) {
                     // Afficher la note
-                    this.className = `w-8 h-8 rounded border ${colorClass} flex items-center justify-center shadow-sm notes-score cursor-pointer text-[10px] font-bold`;
-                    this.innerHTML = `${item.note}`;
+                    this.className = `w-10 h-10 rounded-lg border ${colorClass} flex flex-col items-center justify-center shadow-sm notes-score cursor-pointer`;
+                    this.innerHTML = `
+                        <span class="text-xs font-bold note-value">${item.note}</span>
+                        <span class="text-[8px] opacity-70">/${item.max}</span>
+                    `;
                     this.setAttribute('data-hidden', 'false');
                 } else {
                     // Cacher la note et afficher l'oeil barré sans couleur
-                    this.className = 'w-8 h-8 rounded border border-slate-200 bg-slate-50 flex items-center justify-center shadow-sm notes-score cursor-pointer';
-                    this.innerHTML = '<i class="fas fa-eye-slash text-slate-400 text-xs"></i>';
+                    this.className = 'w-10 h-10 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center shadow-sm notes-score cursor-pointer';
+                    this.innerHTML = '<i class="fas fa-eye-slash text-slate-400 text-sm"></i>';
                     this.setAttribute('data-hidden', 'true');
                 }
             });
@@ -402,8 +449,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('travail-list');
         if (!container) return;
 
+        // Afficher les DS
+        if (MOCK_TRAVAIL.ds.length > 0) {
+            const dsTitle = document.createElement('div');
+            dsTitle.className = 'text-[11px] font-bold text-indigo-900 mb-3 uppercase';
+            dsTitle.textContent = 'Prochains DS';
+            container.appendChild(dsTitle);
+
+            MOCK_TRAVAIL.ds.forEach(ds => {
+                const dsItem = document.createElement('div');
+                dsItem.className = 'bg-violet-100 border-l-4 border-violet-500 p-3 mb-2 flex gap-3 items-center justify-between';
+                
+                const datePart = document.createElement('div');
+                datePart.className = 'flex flex-col items-center text-center';
+                const [day, month, year] = ds.date.split('/');
+                datePart.innerHTML = `
+                    <div class="text-[12px] font-bold text-violet-700">${day}</div>
+                    <div class="text-[8px] text-violet-600 uppercase">janv.</div>
+                `;
+                
+                const infoPart = document.createElement('div');
+                infoPart.className = 'flex-1';
+                infoPart.innerHTML = `
+                    <div class="text-[11px] font-bold text-slate-900">${ds.matiere}</div>
+                    <div class="text-[9px] font-semibold text-slate-700 mb-1">${ds.salle}</div>
+                    <div class="text-[8px] font-semibold text-slate-700">Réviser le chapitre 4 à 9</div>
+                `;
+                
+                const buttonPart = document.createElement('a');
+                buttonPart.href = '/cours/' + ds.matiere.toLowerCase().replace(/\s+/g, '-');
+                buttonPart.className = 'bg-violet-500 hover:bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors whitespace-nowrap';
+                buttonPart.textContent = 'Se rendre sur le cours';
+                
+                dsItem.appendChild(datePart);
+                dsItem.appendChild(infoPart);
+                dsItem.appendChild(buttonPart);
+                container.appendChild(dsItem);
+            });
+        }
+
         // Afficher les devoirs regroupés par date
         MOCK_TRAVAIL.devoirs.forEach(dateGroup => {
+            // Afficher le titre une seule fois avant le premier groupe de devoirs
+            if (MOCK_TRAVAIL.devoirs.indexOf(dateGroup) === 0) {
+                const devoirTitle = document.createElement('div');
+                devoirTitle.className = 'text-[11px] font-bold text-indigo-900 mb-2 uppercase';
+                devoirTitle.textContent = 'Travail à faire';
+                container.appendChild(devoirTitle);
+            }
+            
             // En-tête de la date avec flèche déroulante
             const dateHeader = document.createElement('div');
             dateHeader.className = 'bg-indigo-100 text-indigo-900 text-[10px] font-bold p-2 mb-1 rounded flex items-center justify-between cursor-pointer hover:bg-indigo-200 transition-colors';
@@ -447,8 +541,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const textPart = document.createElement('div');
                     textPart.className = 'flex-1';
                     textPart.innerHTML = `
-                        <div class="text-[12px] font-bold text-slate-800">• ${matiere}</div>
-                        <div class="text-[11px] font-semibold text-slate-700">${devoir.description}</div>
+                        <div class="text-[10px] font-bold text-slate-800">• ${matiere}</div>
+                        <div class="text-[9px] font-semibold text-slate-700">${devoir.description}</div>
                     `;
                     
                     if (devoir.type === 'sans_rendu') {
@@ -485,59 +579,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderTravail();
-    
-    // Rendre les évaluations dans la colonne de droite
-    function renderEvaluations() {
-        const evalsSection = document.getElementById('evals-section');
-        if (!evalsSection) return;
-
-        evalsSection.innerHTML = '';
-
-        // Afficher les DS (évaluations)
-        if (MOCK_TRAVAIL.ds.length > 0) {
-            const dsTitle = document.createElement('div');
-            dsTitle.className = 'text-[11px] font-bold mb-2 uppercase';
-            dsTitle.style.color = '#7c3aed'; // Violet des DS
-            dsTitle.textContent = 'Prochaines évaluations';
-            evalsSection.appendChild(dsTitle);
-
-            MOCK_TRAVAIL.ds.forEach(ds => {
-                const dsItem = document.createElement('div');
-                dsItem.className = 'bg-violet-100 border-l-4 border-violet-500 p-3 mb-2 flex gap-3 items-center justify-between';
-                
-                const datePart = document.createElement('div');
-                datePart.className = 'flex flex-col items-center text-center';
-                const [day, month, year] = ds.date.split('/');
-                datePart.innerHTML = `
-                    <div class="text-[12px] font-bold text-violet-700">${day}</div>
-                    <div class="text-[8px] text-violet-600 uppercase">janv.</div>
-                `;
-                
-                const infoPart = document.createElement('div');
-                infoPart.className = 'flex-1';
-                infoPart.innerHTML = `
-                    <div class="text-[11px] font-bold text-slate-900">${ds.matiere}</div>
-                    <div class="text-[9px] font-semibold text-slate-700 mb-1">${ds.salle}</div>
-                    <div class="text-[8px] font-semibold text-slate-700">Réviser le chapitre 4 à 9</div>
-                `;
-                
-                const buttonPart = document.createElement('a');
-                buttonPart.href = '/cours/' + ds.matiere.toLowerCase().replace(/\s+/g, '-');
-                buttonPart.className = 'bg-violet-500 hover:bg-violet-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors whitespace-nowrap';
-                buttonPart.textContent = 'Se rendre sur le cours';
-                
-                dsItem.appendChild(datePart);
-                dsItem.appendChild(infoPart);
-                dsItem.appendChild(buttonPart);
-                evalsSection.appendChild(dsItem);
-            });
-        }
-    }
-    
-    renderEvaluations();
-    
-    // Rendre les catégories après le travail
-    renderCategories();
 
     // ════════════════════════════════════════════════════════════════
     // ║              GESTION DE L'ASSIDUITÉ                           ║
@@ -627,409 +668,189 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCours();
 
     // ════════════════════════════════════════════════════════════════
-    // ║           INITIALISATION DES NOTES (notes.html)              ║
-    // ════════════════════════════════════════════════════════════════
-    
-    // Vérifier si on est sur la page notes
-    if (document.querySelector('[data-page="notes"]')) {
-        // Fonction spécifique pour afficher les notes de notes.html
-        let selectedNoteIdPage = null;
-        
-        function renderNotesPage() {
-            const container = document.getElementById('mes-notes-list');
-            if (!container) return;
-            
-            container.innerHTML = MOCK_NOTES.map(note => `
-                <div class="note-item ${selectedNoteIdPage === note.id ? 'active' : ''}" onclick="selectNotePage(${note.id})">
-                    <div class="note-date-badge" style="background-color: ${note.couleur};">
-                        <div>${note.jour}</div>
-                        <div>${note.mois}</div>
-                    </div>
-                    <div class="note-item-info">
-                        <div class="note-item-matiere">${note.matiere}</div>
-                        <div class="note-item-moyenne">Moyenne de la classe : ${note.moyenne}</div>
-                    </div>
-                    <div class="note-item-value">${note.note.toFixed(2)}</div>
-                </div>
-            `).join('');
-        }
-        
-        // Fonction spécifique pour afficher les détails
-        function selectNotePage(id) {
-            selectedNoteIdPage = id;
-            renderNotesPage(); // Re-rendre pour mettre à jour la classe active
-            
-            const note = MOCK_NOTES.find(n => n.id === id);
-            const detailsContainer = document.getElementById('details-content');
-            if (!detailsContainer) return;
-            
-            if (note) {
-                detailsContainer.innerHTML = `
-                    <div class="details-container">
-                        <div class="details-header">
-                            <div class="details-matiere">${note.matiere}</div>
-                            <div class="details-date">Note du ${note.jour} ${note.mois} ${note.annee}</div>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label highlight">Note élève :</span>
-                            <span class="details-value highlight">${note.note.toFixed(2)}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Moyenne classe :</span>
-                            <span class="details-value">${note.moyenne}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Note la plus haute :</span>
-                            <span class="details-value">${note.plusHaute}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Note la plus basse :</span>
-                            <span class="details-value">${note.plusBasse}</span>
-                        </div>
-                        
-                        <div class="details-row">
-                            <span class="details-label">Coefficient :</span>
-                            <span class="details-value">${note.coefficient}</span>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        
-        // Exposer les fonctions globalement pour les onclick
-        window.selectNotePage = selectNotePage;
-        
-        // Initialiser l'affichage
-        renderNotesPage();
-    }
-
-    // ════════════════════════════════════════════════════════════════
     // ║                   FIN DU SCRIPT                               ║
     // ════════════════════════════════════════════════════════════════
 
-    // La gestion de la navigation par onglets est maintenant centralisée dans header.js
-
     // ════════════════════════════════════════════════════════════════
-    // ║        GESTION DE LA PAGE TRAVAIL (travail.html)             ║
+    // ║        GESTION DE LA NAVIGATION PAR ONGLETS                  ║
     // ════════════════════════════════════════════════════════════════
 
-    // Gestion des boutons Vue
-    const vueChronologiqueBtn = document.getElementById('vue-chronologique-btn');
-    const vueHebdomadaireBtn = document.getElementById('vue-hebdomadaire-btn');
-
-    if (vueChronologiqueBtn && vueHebdomadaireBtn) {
-        vueChronologiqueBtn.addEventListener('click', () => {
-            // Activer Chronologique (bouton gauche)
-            vueChronologiqueBtn.classList.add('bg-indigo-600', 'text-white', 'rounded-l');
-            vueChronologiqueBtn.classList.remove('text-slate-700', 'hover:bg-slate-300');
-
-            // Désactiver Hebdomadaire (bouton droit) et s'assurer du bon arrondi au survol
-            vueHebdomadaireBtn.classList.remove('bg-indigo-600', 'text-white');
-            vueHebdomadaireBtn.classList.add('text-slate-700', 'hover:bg-slate-300', 'rounded-r');
-            vueHebdomadaireBtn.classList.remove('rounded-l');
-        });
-
-        vueHebdomadaireBtn.addEventListener('click', () => {
-            // Activer Hebdomadaire (bouton droit)
-            vueHebdomadaireBtn.classList.add('bg-indigo-600', 'text-white', 'rounded-r');
-            vueHebdomadaireBtn.classList.remove('text-slate-700', 'hover:bg-slate-300');
-
-            // Désactiver Chronologique (bouton gauche) et s'assurer du bon arrondi au survol
-            vueChronologiqueBtn.classList.remove('bg-indigo-600', 'text-white');
-            vueChronologiqueBtn.classList.add('text-slate-700', 'hover:bg-slate-300', 'rounded-l');
-            vueChronologiqueBtn.classList.remove('rounded-r');
-        });
-    }
-
-    // Gestion des filtres Travail
-    const filterAFaireBtn = document.getElementById('filter-a-faire-btn');
-    const filterFaitBtn = document.getElementById('filter-fait-btn');
-
-    if (filterAFaireBtn && filterFaitBtn) {
-        filterAFaireBtn.addEventListener('click', () => {
-            filterAFaireBtn.classList.add('bg-indigo-600', 'text-white');
-            filterAFaireBtn.classList.remove('text-slate-700', 'bg-slate-200');
-            filterFaitBtn.classList.remove('bg-indigo-600', 'text-white');
-            filterFaitBtn.classList.add('text-slate-700', 'bg-slate-200');
-        });
-
-        filterFaitBtn.addEventListener('click', () => {
-            filterFaitBtn.classList.add('bg-indigo-600', 'text-white');
-            filterFaitBtn.classList.remove('text-slate-700', 'bg-slate-200');
-            filterAFaireBtn.classList.remove('bg-indigo-600', 'text-white');
-            filterAFaireBtn.classList.add('text-slate-700', 'bg-slate-200');
-        });
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // ║     GESTION DES CATÉGORIES DE MATIÈRES (colonne gauche)      ║
-    // ════════════════════════════════════════════════════════════════
-
-    function renderCategories() {
-        // Utiliser un sélecteur SPÉCIFIQUE à travail.html
-        const categoriesContainer = document.querySelector('[data-page="travail"] .flex-1.bg-white\\/40.backdrop-blur-md.border.border-white\\/60.shadow-lg.rounded-bl-2xl');
-        if (!categoriesContainer) return;
-
-        // Récupérer la div interne qui contient les catégories
-        const innerDiv = categoriesContainer.querySelector('.flex-1.overflow-y-auto');
-        if (!innerDiv) return;
-
-        // Récupérer toutes les matières uniques avec le count de devoirs
-        const matiereStats = {};
+    (function(){
+        const tabs = Array.from(document.querySelectorAll('.tab-btn'));
+        const resultatBtn = document.getElementById('resultats-btn');
+        const resultatMenu = document.getElementById('resultats-menu');
+        let hoverTimeout = null;
         
-        // Ajouter les matières des DS
-        MOCK_TRAVAIL.ds.forEach(ds => {
-            if (!matiereStats[ds.matiere]) {
-                matiereStats[ds.matiere] = 0;
-            }
-            matiereStats[ds.matiere]++;
-        });
-        
-        // Ajouter les matières des devoirs
-        MOCK_TRAVAIL.devoirs.forEach(dateGroup => {
-            dateGroup.items.forEach(item => {
-                if (!matiereStats[item.matiere]) {
-                    matiereStats[item.matiere] = 0;
-                }
-                matiereStats[item.matiere]++;
-            });
-        });
-
-        // Créer les matières triées
-        const matieresSorted = Object.keys(matiereStats).sort();
-        
-        // Vider le conteneur
-        innerDiv.innerHTML = '';
-        
-        // Ajouter l'option "Toutes les matières"
-        const toutesMatieresItem = document.createElement('div');
-        toutesMatieresItem.className = 'travail-matiere-item flex items-center gap-2 p-2 bg-white/50 hover:bg-white/80 rounded transition-colors cursor-pointer border-l-2 mb-1 bg-white/80 border-l-2';
-        toutesMatieresItem.style.borderLeftColor = '#6366f1';
-        
-        const toutesMatieresCount = Object.values(matiereStats).reduce((a, b) => a + b, 0);
-        const toutesBadge = document.createElement('div');
-        toutesBadge.className = 'flex items-center justify-center w-6 h-6 rounded font-bold text-white flex-shrink-0 text-xs';
-        toutesBadge.style.backgroundColor = '#6366f1';
-        toutesBadge.innerHTML = `<span>${toutesMatieresCount}</span>`;
-        
-        const toutesInfo = document.createElement('div');
-        toutesInfo.className = 'flex-1 min-w-0';
-        toutesInfo.innerHTML = `<div class="text-[9px] font-bold text-slate-800 truncate">Toutes les matières</div>`;
-        
-        toutesMatieresItem.appendChild(toutesBadge);
-        toutesMatieresItem.appendChild(toutesInfo);
-        
-        toutesMatieresItem.addEventListener('click', () => {
-            document.querySelectorAll('[data-page="travail"] .travail-matiere-item').forEach(item => {
-                item.classList.remove('bg-white/80', 'border-l-2');
-                item.classList.add('bg-white/50');
-            });
-            toutesMatieresItem.classList.remove('bg-white/50');
-            toutesMatieresItem.classList.add('bg-white/80', 'border-l-2');
+        // Détecter automatiquement la page actuelle en fonction du nom du fichier
+        function detectCurrentPage() {
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
             
-            // Afficher tous les devoirs
-            const travailList = document.getElementById('travail-list');
-            if (travailList) {
-                travailList.querySelectorAll('.devoirs-day-container').forEach(container => {
-                    const dateHeader = container.previousElementSibling;
-                    if (dateHeader && dateHeader.classList.contains('bg-indigo-100')) {
-                        dateHeader.style.display = 'flex';
-                        container.style.display = 'block';
+            // Mapping entre fichiers et data-tab
+            const pageMap = {
+                '/': 'accueil',
+                '/edt': 'edt',
+                '/resultats': 'resultats',
+                '/notes': 'resultats',
+                '/releve': 'resultats',
+                '/bulletin': 'resultats',
+                '/travail': 'cahier-textes',
+                '/assiduity': 'cartne-correspondance',
+                '/communication': 'communication'
+            };
+            
+            return pageMap[currentFile] || 'accueil';
+        }
+        
+        let activePage = detectCurrentPage();
+        
+        function activateTab(btn, isPermanent = false) {
+            tabs.forEach(t => {
+                // Ne pas désactiver le bouton de la page active
+                if (t.dataset.tab !== activePage) {
+                    t.classList.remove('bg-white','text-indigo-900','shadow-sm', 'border-red-500');
+                    t.classList.add('text-white');
+                    t.setAttribute('aria-selected','false');
+                }
+            });
+            btn.classList.add('bg-white','text-indigo-900','shadow-sm','border-red-500');
+            btn.classList.remove('text-white');
+            btn.setAttribute('aria-selected','true');
+
+            if (isPermanent) {
+                activePage = btn.dataset.tab;
+            }
+
+            // Event for other scripts to react to tab change
+            document.body.dispatchEvent(new CustomEvent('tab-change', { detail: { tab: btn.dataset.tab } }));
+        }
+
+        // Gestion du hover sur tous les tabs (sauf Résultats)
+        tabs.forEach(t => {
+            if (t.id !== 'resultats-btn') {
+                t.addEventListener('mouseenter', () => {
+                    // Fermer le menu Résultats si ouvert
+                    if (resultatMenu) {
+                        resultatMenu.classList.add('hidden');
+                        if (resultatBtn) resultatBtn.setAttribute('aria-expanded','false');
                     }
-                    container.querySelectorAll('.flex.items-center').forEach(item => {
-                        item.style.display = 'flex';
-                    });
+                    // Ne pas changer le style si c'est la page active
+                    if (t.dataset.tab !== activePage) {
+                        clearTimeout(hoverTimeout);
+                        activateTab(t, false);
+                    }
+                });
+                
+                t.addEventListener('mouseleave', () => {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = setTimeout(() => {
+                        // Retourner à la page active
+                        const activeBtn = document.querySelector(`[data-tab="${activePage}"]`);
+                        if (activeBtn) activateTab(activeBtn, false);
+                    }, 150);
+                });
+                
+                t.addEventListener('click', (e) => {
+                    clearTimeout(hoverTimeout);
+                    resultatMenu.classList.add('hidden');
+                    if (resultatBtn) resultatBtn.setAttribute('aria-expanded','false');
+                    activateTab(t, true);
+                    // if a target href is provided, navigate to it
+                    if (t.dataset.href) {
+                        setTimeout(() => { window.location.href = t.dataset.href; }, 50);
+                    }
                 });
             }
-        });
-        
-        innerDiv.appendChild(toutesMatieresItem);
-        
-        // Ajouter les matières au style des notes
-        matieresSorted.forEach(matiere => {
-            const count = matiereStats[matiere];
-            const color = getColor(matiere);
             
-            const matiereItem = document.createElement('div');
-            matiereItem.className = 'travail-matiere-item flex items-center gap-2 p-2 bg-white/50 hover:bg-white/80 rounded transition-colors cursor-pointer border-l-2 mb-1';
-            matiereItem.style.borderLeftColor = color.border;
-            matiereItem.style.setProperty('--border-color', color.border);
-            
-            // Ajouter un style hover personnalisé avec trait grisé
-            matiereItem.addEventListener('mouseenter', function() {
-                this.style.borderLeftColor = color.border + '80'; // Ajouter de la transparence
-            });
-            // Ajouter un style hover personnalisé avec trait grisé
-            matiereItem.addEventListener('mouseenter', function() {
-                this.style.borderLeftColor = color.border + '80'; // Ajouter de la transparence
-            });
-            matiereItem.addEventListener('mouseleave', function() {
-                const isActive = this.classList.contains('bg-white/80');
-                this.style.borderLeftColor = isActive ? color.border : color.border + '80';
-            });
-            
-            // Rectangle avec nombre de devoirs (PETIT)
-            const badge = document.createElement('div');
-            badge.className = 'flex items-center justify-center w-6 h-6 rounded font-bold text-white flex-shrink-0 text-xs';
-            badge.style.backgroundColor = color.border;
-            badge.innerHTML = `<span>${count}</span>`;
-            
-            // Info matière
-            const infoPart = document.createElement('div');
-            infoPart.className = 'flex-1 min-w-0';
-            infoPart.innerHTML = `
-                <div class="text-[9px] font-bold text-slate-800 truncate">${matiere}</div>
-            `;
-            
-            matiereItem.appendChild(badge);
-            matiereItem.appendChild(infoPart);
-            
-            // Event au clic
-            matiereItem.addEventListener('click', () => {
-                // Marquer comme actif
-                document.querySelectorAll('[data-page="travail"] .travail-matiere-item').forEach(item => {
-                    item.classList.remove('bg-white/80', 'border-l-2');
-                    item.classList.add('bg-white/50');
-                });
-                matiereItem.classList.remove('bg-white/50');
-                matiereItem.classList.add('bg-white/80', 'border-l-2');
-                
-                // Filtrer l'affichage des devoirs
-                filterTravailByMatiere(matiere);
-            });
-            
-            innerDiv.appendChild(matiereItem);
-        });
-    }
-
-    function filterTravailByMatiere(matiere) {
-        const travailList = document.getElementById('travail-list');
-        if (!travailList) return;
-
-        // Masquer/afficher les devoirs selon la matière
-        travailList.querySelectorAll('.devoirs-day-container').forEach(container => {
-            let hasVisibleItem = false;
-            container.querySelectorAll('.flex.items-center').forEach(item => {
-                const matiereText = item.textContent;
-                if (matiereText.includes(matiere)) {
-                    item.style.display = 'flex';
-                    hasVisibleItem = true;
-                } else {
-                    item.style.display = 'none';
+            t.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { 
+                    e.preventDefault();
+                    activateTab(t, true);
+                    if (t.dataset.href) {
+                        setTimeout(() => { window.location.href = t.dataset.href; }, 50);
+                    }
                 }
             });
-            // Masquer le groupe de date s'il n'y a pas d'item visible
-            const dateHeader = container.previousElementSibling;
-            if (dateHeader && dateHeader.classList.contains('bg-indigo-100')) {
-                dateHeader.style.display = hasVisibleItem ? 'flex' : 'none';
-                container.style.display = hasVisibleItem ? 'block' : 'none';
-            }
         });
-    }
-
-    // Gestion du calendrier
-    const datePickerBtn = document.getElementById('date-picker-btn');
-    const calendarPopup = document.getElementById('calendar-popup');
-    const closeCalendarBtn = document.getElementById('close-calendar-btn');
-    const prevMonthBtn = document.getElementById('prev-month-btn');
-    const nextMonthBtn = document.getElementById('next-month-btn');
-    const calendarMonth = document.getElementById('calendar-month');
-    const calendarDays = document.getElementById('calendar-days');
-    const dateDisplay = document.getElementById('date-display');
-
-    let currentDate = new Date();
-
-    function renderCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
         
-        // Afficher le mois et l'année
-        const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-                           'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-        calendarMonth.textContent = `${monthNames[month]} ${year}`;
-        
-        // Calculer le premier jour du mois et le nombre de jours
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const daysInPrevMonth = new Date(year, month, 0).getDate();
-        
-        calendarDays.innerHTML = '';
-        
-        // Ajouter les jours du mois précédent
-        for (let i = (firstDay === 0 ? 6 : firstDay - 1); i > 0; i--) {
-            const day = document.createElement('button');
-            day.className = 'text-[8px] p-1 text-slate-400 hover:bg-slate-100 rounded';
-            day.textContent = daysInPrevMonth - i + 1;
-            day.disabled = true;
-            calendarDays.appendChild(day);
-        }
-        
-        // Ajouter les jours du mois courant
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dayBtn = document.createElement('button');
-            dayBtn.className = 'text-[8px] p-1 hover:bg-indigo-100 rounded transition-colors';
-            dayBtn.textContent = day;
-            
-            // Marquer aujourd'hui
-            const today = new Date();
-            if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-                dayBtn.classList.add('bg-indigo-600', 'text-white', 'font-bold');
-            }
-            
-            dayBtn.addEventListener('click', () => {
-                const selectedDate = new Date(year, month, day);
-                dateDisplay.textContent = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
-                calendarPopup.classList.add('hidden');
+        // Gestion du menu Résultats - HOVER ONLY
+        if (resultatBtn) {
+            resultatBtn.addEventListener('mouseenter', () => {
+                clearTimeout(hoverTimeout);
+                resultatMenu.classList.remove('hidden');
+                resultatBtn.setAttribute('aria-expanded','true');
+                // Afficher le bouton en actif sans le rendre permanent
+                activateTab(resultatBtn, false);
             });
             
-            calendarDays.appendChild(dayBtn);
+            resultatBtn.addEventListener('mouseleave', () => {
+                clearTimeout(hoverTimeout);
+                hoverTimeout = setTimeout(() => {
+                    if (!resultatMenu.matches(':hover')) {
+                        resultatMenu.classList.add('hidden');
+                        resultatBtn.setAttribute('aria-expanded','false');
+                        // Retourner à la page active
+                        const activeBtn = document.querySelector(`[data-tab="${activePage}"]`);
+                        if (activeBtn) activateTab(activeBtn, false);
+                    }
+                }, 150);
+            });
+            
+            // Pas de clic sur le bouton lui-même - le bouton ne navigue pas
+            resultatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+
+        // Keep menu visible while hovering it
+        if (resultatMenu) {
+            resultatMenu.addEventListener('mouseenter', () => {
+                clearTimeout(hoverTimeout);
+            });
+            resultatMenu.addEventListener('mouseleave', () => {
+                clearTimeout(hoverTimeout);
+                hoverTimeout = setTimeout(() => {
+                    resultatMenu.classList.add('hidden');
+                    if (resultatBtn) resultatBtn.setAttribute('aria-expanded','false');
+                    const activeBtn = document.querySelector(`[data-tab="${activePage}"]`);
+                    if (activeBtn) activateTab(activeBtn, false);
+                }, 150);
+            });
+            
+            // Gestion des clics sur les liens du menu
+            const menuLinks = resultatMenu.querySelectorAll('.menu-link');
+            menuLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    resultatMenu.classList.add('hidden');
+                    if (resultatBtn) resultatBtn.setAttribute('aria-expanded','false');
+                    const activeBtn = document.querySelector(`[data-tab="${activePage}"]`);
+                    if (activeBtn) activateTab(activeBtn, false);
+                    
+                    // Navigate using data-href like tabs do
+                    if (link.dataset.href) {
+                        setTimeout(() => { window.location.href = link.dataset.href; }, 50);
+                    }
+                });
+            });
         }
         
-        // Ajouter les jours du mois suivant
-        const totalCells = calendarDays.children.length;
-        const remainingCells = 42 - totalCells;
-        for (let day = 1; day <= remainingCells; day++) {
-            const dayBtn = document.createElement('button');
-            dayBtn.className = 'text-[8px] p-1 text-slate-400 hover:bg-slate-100 rounded';
-            dayBtn.textContent = day;
-            dayBtn.disabled = true;
-            calendarDays.appendChild(dayBtn);
-        }
-    }
-
-    if (datePickerBtn && calendarPopup) {
-        datePickerBtn.addEventListener('click', () => {
-            calendarPopup.classList.toggle('hidden');
-            if (!calendarPopup.classList.contains('hidden')) {
-                renderCalendar();
-            }
-        });
-
-        closeCalendarBtn?.addEventListener('click', () => {
-            calendarPopup.classList.add('hidden');
-        });
-
-        prevMonthBtn?.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar();
-        });
-
-        nextMonthBtn?.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        });
-
-        // Fermer le calendrier quand on clique en dehors
+        // Fermer le menu en cliquant ailleurs
         document.addEventListener('click', (e) => {
-            if (!datePickerBtn.contains(e.target) && !calendarPopup.contains(e.target)) {
-                calendarPopup.classList.add('hidden');
+            if (resultatBtn && resultatMenu && !resultatBtn.contains(e.target) && !resultatMenu.contains(e.target)) {
+                resultatMenu.classList.add('hidden');
+                if (resultatBtn) resultatBtn.setAttribute('aria-expanded','false');
+                const activeBtn = document.querySelector(`[data-tab="${activePage}"]`);
+                if (activeBtn) activateTab(activeBtn, false);
             }
         });
-    }
+        
+        // Initialize with detected page
+        const detectedBtn = document.querySelector(`[data-tab="${activePage}"]`);
+        if (detectedBtn) {
+            activateTab(detectedBtn, true);
+        }
+    })();
 
     // ════════════════════════════════════════════════════════════════
     // ║        GESTION DE LA SÉLECTION DES SEMAINES (CALENDRIER)     ║
@@ -1158,7 +979,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Mettre à jour l'affichage des jours
         updateDaysDisplay(startOfWeek);
-        
+
+        // Exposer la semaine courante et charger les cours depuis l'API
+        window.currentWeekStart = startOfWeek;
+        loadCours(startOfWeek);
+
         // Émettre un événement personnalisé
         document.body.dispatchEvent(new CustomEvent('week-selected', { detail: { week, startDate: startOfWeek } }));
     }
