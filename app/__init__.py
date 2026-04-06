@@ -73,10 +73,17 @@ def create_app(config=None):
         return jsonify({'error': 'Authentification requise'}), 401
 
     @login_manager.user_loader
-    def load_user(user_id):
+    def load_user(session_token):
         from .models import User
-        user = User.query.get(int(user_id))
+        try:
+            user_id, digest = session_token.split('.', 1)
+            user = User.query.get(int(user_id))
+        except (ValueError, AttributeError):
+            return None
         if user is None or not user.is_active:
+            return None
+        # Vérifier que le digest correspond au compte actuel
+        if user.get_id() != session_token:
             return None
         return user
 
