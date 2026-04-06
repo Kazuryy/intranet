@@ -22,7 +22,7 @@ function apiToMock(c) {
     };
 }
 
-async function loadCours(startDate) {
+async function loadCours(startDate, classeId) {
     const debut = new Date(startDate);
     debut.setHours(0, 0, 0, 0);
     const fin = new Date(startDate);
@@ -30,6 +30,7 @@ async function loadCours(startDate) {
     fin.setHours(23, 59, 59, 999);
     try {
         const params = new URLSearchParams({ debut: debut.toISOString(), fin: fin.toISOString() });
+        if (classeId) params.set('classe_id', classeId);
         const res = await fetch('/edt/cours?' + params.toString());
         if (!res.ok) return;
         const data = await res.json();
@@ -40,28 +41,8 @@ async function loadCours(startDate) {
     }
 }
 
-// ─── MOCK SQL DATA / API CALLS ─────────────────────────────────
-const MOCK_COURS = [
-    { jour: 'lundi',    debut: 8.0,  fin: 9.0,  matiere: 'Mathématiques',    prof: 'M. Dupont',    salle: 'A101' },
-    { jour: 'lundi',    debut: 10.0, fin: 12.0, matiere: 'Physique-Chimie',  prof: 'Mme. Leroy',   salle: 'Labo 2' },
-    { jour: 'lundi',    debut: 10.5, fin: 13.5, matiere: 'SVT',              prof: 'M. Darwin',    salle: 'Labo 1' },
-    // --------------------------------------------------------------
-    { jour: 'lundi',    debut: 14.0, fin: 15.0, matiere: 'Histoire-Géo',     prof: 'M. Martin',    salle: 'B203' },
-    { jour: 'mardi',    debut: 8.0,  fin: 9.0,  matiere: 'Anglais',          prof: 'Mme. Smith',   salle: 'C105' },
-    { jour: 'mardi',    debut: 9.08,  fin: 10.5, matiere: 'Mathématiques',    prof: 'M. Dupont',    salle: 'A101' },
-    { jour: 'mardi',    debut: 9.08, fin: 10.5, matiere: 'Informatique',     prof: 'M. Bernard',   salle: 'Salle Info' },
-    { jour: 'mercredi', debut: 8.0,  fin: 10.0, matiere: 'Français',         prof: 'Mme. Moreau',  salle: 'B104' },
-    { jour: 'mercredi', debut: 10.0, fin: 11.0, matiere: 'Philosophie',      prof: 'M. Rousseau',  salle: 'C201' },
-    { jour: 'jeudi',    debut: 8.5,  fin: 10.0, matiere: 'Physique-Chimie',  prof: 'Mme. Leroy',   salle: 'Labo 2' },
-    { jour: 'jeudi',    debut: 10.0, fin: 11.0, matiere: 'Anglais',          prof: 'Mme. Smith',   salle: 'C105' },
-    { jour: 'jeudi',    debut: 14.0, fin: 15.5, matiere: 'Français',         prof: 'Mme. Moreau',  salle: 'B104' },
-    { jour: 'jeudi',    debut: 15.5, fin: 18.0, matiere: 'EPS',              prof: 'M. Girard',    salle: 'Gymnase' },
-    { jour: 'vendredi', debut: 9.0,  fin: 11.0, matiere: 'Histoire-Géo',     prof: 'M. Martin',    salle: 'B203' },
-    { jour: 'vendredi', debut: 11.0, fin: 12.0, matiere: 'Philosophie',      prof: 'M. Rousseau',  salle: 'C201' },
-    { jour: 'vendredi', debut: 14.0, fin: 15.0, matiere: 'Informatique',     prof: 'M. Bernard',   salle: 'Salle Info' },
-    { jour: 'samedi',   debut: 8.0,  fin: 10.0, matiere: 'Mathématiques',    prof: 'M. Dupont',    salle: 'A101' },
-    { jour: 'samedi',   debut: 10.0, fin: 11.0, matiere: 'EPS',              prof: 'M. Girard',    salle: 'Gymnase' },
-];
+// ─── DONNÉES EDT (remplies depuis l'API) ────────────────────────
+const MOCK_COURS = [];
 
 const MATIERE_COLORS = {
     'Mathématiques':   { bg: '#e0e7ff', border: '#6366f1', text: '#3730a3' },
@@ -114,6 +95,8 @@ function renderCours() {
     joursDeLaSemaine.forEach(jour => {
         const container = document.querySelector(`[data-jour="${jour}"] #sql-courses-container-${jour}`);
         if (!container) return;
+
+        container.innerHTML = '';
 
         // 1. Filtrer les cours du jour et les trier chronologiquement
         let coursDuJour = MOCK_COURS
@@ -287,54 +270,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // ════════════════════════════════════════════════════════════════
     // ║              RÉCUPÉRATION DES DONNÉES (API)                   ║
     // ════════════════════════════════════════════════════════════════
-    // TODO: Remplacer MOCK_NOTES par: await fetch('/api/notes')
-    // TODO: Remplacer MOCK_TRAVAIL par: await fetch('/api/travail')
-    // TODO: Remplacer MOCK_ASSIDUITY par: await fetch('/api/assiduity')
 
-    // --- DONNÉES DE TEST POUR LES NOTES (À lier à SQL plus tard) ---
-    const MOCK_NOTES = [
-        { matiere: 'Mathématiques', date: '25/03/2026', note: 18.5, max: 20 },
-        { matiere: 'Anglais', date: '24/03/2026', note: 14.0, max: 20 },
-        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
-        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
-        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
-        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
-        { matiere: 'Physique-Chimie', date: '20/03/2026', note: 9.5, max: 20 },
-    ];
+    let currentNotes = [];
 
-    // --- DONNÉES DE TEST POUR LES DEVOIRS ET DS ---
-    const MOCK_TRAVAIL = {
-        ds: [
-            { matiere: 'Mathématiques', date: '30/03/2026', salle: 'A101', duree: '2h', programme: 'Chapitres 1-5' },
-            { matiere: 'Français', date: '02/04/2026', salle: 'B104', duree: '3h', programme: 'Poésie' }
-        ],
-        devoirs: [
-            { date: '27/03/2026', items: [
-                { matiere: 'Mathématiques', description: 'Exercices 1-10 page 45', type: 'sans_rendu' },
-                { matiere: 'Français', description: 'Résumé du chapitre 3', type: 'sans_rendu' }
-            ]},
-            { date: '28/03/2026', items: [
-                { matiere: 'Anglais', description: 'Dialogue à enregistrer', type: 'avec_rendu', lien: '/travail/anglais' },
-                { matiere: 'Informatique', description: 'Projet Python', type: 'avec_rendu', lien: '/travail/informatique' }
-            ]},
-            { date: '29/03/2026', items: [
-                { matiere: 'Histoire-Géo', description: 'Fiche de révision', type: 'sans_rendu' }
-            ]}
-        ]
-    };
+    function formatDateFR(isoDate) {
+        if (!isoDate) return '';
+        const [y, m, d] = isoDate.split('-');
+        return `${d}/${m}/${y}`;
+    }
 
-    // --- DONNÉES DE TEST POUR L'ASSIDUITÉ ---
-    const MOCK_ASSIDUITY = {
-        retards_absences: [
-            { type: 'Retard', date: '25/03/2026', heure: '08h15' },
-            { type: 'Absence justifiée', date: '24/03/2026', debut: '10h00', fin: '12h00' },
-            { type: 'Absence non justifiée', date: '20/03/2026', debut: '14h00', fin: '15h00' }
-        ],
-        punitions: [
-            { type: 'Retenue', date: '28/03/2026', heure: '17h00', salle: 'A101', par: 'M. Dupont' },
-            { type: 'Retenue', date: '01/04/2026', heure: '17h30', salle: 'B204', par: 'Mme. Leroy' }
-        ]
-    };
+    function transformDevoirs(apiDevoirs) {
+        const TYPES_RENDU = ['expose', 'projet', 'soutenance'];
+        const ds = apiDevoirs.filter(d => d.type === 'controle');
+        const devoirs = apiDevoirs.filter(d => d.type !== 'controle');
+
+        const grouped = {};
+        devoirs.forEach(d => {
+            const date = formatDateFR(d.date_limite);
+            if (!grouped[date]) grouped[date] = { date, items: [] };
+            grouped[date].items.push({
+                matiere: d.matiere,
+                description: d.consigne || '',
+                type: TYPES_RENDU.includes(d.type) ? 'avec_rendu' : 'sans_rendu',
+            });
+        });
+
+        return {
+            ds: ds.map(d => ({
+                matiere: d.matiere,
+                date: formatDateFR(d.date_limite),
+                salle: '',
+                duree: '',
+                programme: d.consigne || '',
+            })),
+            devoirs: Object.values(grouped),
+        };
+    }
 
     // Fonction pour déterminer la couleur du carré selon la note
     function getGradeColor(note, max) {
@@ -353,12 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('notes-list');
         if (!container) return;
 
-        MOCK_NOTES.slice(0, 5).forEach((item, itemIndex) => {
-            const colorClass = getGradeColor(item.note, item.max);
+        currentNotes.slice(0, 5).forEach((item, itemIndex) => {
+            const noteMax = item.note_max ?? item.max;
+            const dateStr = item.date_evaluation ?? item.date ?? '';
+            const colorClass = getGradeColor(item.note, noteMax);
             const row = document.createElement('div');
             // Structure de la ligne : Infos à gauche, Carré à droite
             row.className = 'flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0';
-            
+
             const scoreBox = document.createElement('div');
             scoreBox.className = `w-10 h-10 rounded-lg border ${colorClass} flex flex-col items-center justify-center shadow-sm notes-score cursor-pointer`;
             scoreBox.setAttribute('data-note-index', itemIndex);
@@ -366,14 +339,14 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreBox.setAttribute('data-color-class', colorClass);
             scoreBox.innerHTML = `
                 <span class="text-xs font-bold note-value">${item.note}</span>
-                <span class="text-[8px] opacity-70">/${item.max}</span>
+                <span class="text-[8px] opacity-70">/${noteMax}</span>
             `;
-            
+
             const infoPart = document.createElement('div');
             infoPart.className = 'flex-1';
             infoPart.innerHTML = `
                 <span class="text-[11px] font-bold text-slate-700">${item.matiere}</span><br>
-                <span class="text-[9px] text-slate-400 font-medium">${item.date}</span>
+                <span class="text-[9px] text-slate-400 font-medium">${dateStr}</span>
             `;
             
             row.appendChild(infoPart);
@@ -391,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.className = `w-10 h-10 rounded-lg border ${colorClass} flex flex-col items-center justify-center shadow-sm notes-score cursor-pointer`;
                     this.innerHTML = `
                         <span class="text-xs font-bold note-value">${item.note}</span>
-                        <span class="text-[8px] opacity-70">/${item.max}</span>
+                        <span class="text-[8px] opacity-70">/${item.note_max ?? item.max}</span>
                     `;
                     this.setAttribute('data-hidden', 'false');
                 } else {
@@ -411,15 +384,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         noteScores.forEach((score) => {
             const noteIndex = score.getAttribute('data-note-index');
-            const item = MOCK_NOTES[noteIndex];
+            const item = currentNotes[noteIndex];
             const colorClass = score.getAttribute('data-color-class');
-            
+            const noteMax = item.note_max ?? item.max;
+
             if (notesVisible) {
                 // Afficher toutes les notes
                 score.className = `w-10 h-10 rounded-lg border ${colorClass} flex flex-col items-center justify-center shadow-sm notes-score cursor-pointer`;
                 score.innerHTML = `
                     <span class="text-xs font-bold note-value">${item.note}</span>
-                    <span class="text-[8px] opacity-70">/${item.max}</span>
+                    <span class="text-[8px] opacity-70">/${noteMax}</span>
                 `;
                 score.setAttribute('data-hidden', 'false');
             } else {
@@ -433,8 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
         eyeIcon.className = notesVisible ? 'fas fa-eye' : 'fas fa-eye-slash';
     }
 
-    renderNotes();
-    
     // Ajouter l'écouteur au bouton œil
     const eyeButton = document.getElementById('notes-eye-btn');
     if (eyeButton) {
@@ -445,18 +417,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ║              GESTION DES DEVOIRS ET DS                        ║
     // ════════════════════════════════════════════════════════════════
 
-    function renderTravail() {
+    function renderTravail(travail) {
         const container = document.getElementById('travail-list');
         if (!container) return;
 
         // Afficher les DS
-        if (MOCK_TRAVAIL.ds.length > 0) {
+        if (travail.ds.length > 0) {
             const dsTitle = document.createElement('div');
             dsTitle.className = 'text-[11px] font-bold text-indigo-900 mb-3 uppercase';
             dsTitle.textContent = 'Prochains DS';
             container.appendChild(dsTitle);
 
-            MOCK_TRAVAIL.ds.forEach(ds => {
+            travail.ds.forEach(ds => {
                 const dsItem = document.createElement('div');
                 dsItem.className = 'bg-violet-100 border-l-4 border-violet-500 p-3 mb-2 flex gap-3 items-center justify-between';
                 
@@ -489,9 +461,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Afficher les devoirs regroupés par date
-        MOCK_TRAVAIL.devoirs.forEach(dateGroup => {
+        travail.devoirs.forEach(dateGroup => {
             // Afficher le titre une seule fois avant le premier groupe de devoirs
-            if (MOCK_TRAVAIL.devoirs.indexOf(dateGroup) === 0) {
+            if (travail.devoirs.indexOf(dateGroup) === 0) {
                 const devoirTitle = document.createElement('div');
                 devoirTitle.className = 'text-[11px] font-bold text-indigo-900 mb-2 uppercase';
                 devoirTitle.textContent = 'Travail à faire';
@@ -578,94 +550,302 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    renderTravail();
+    (async () => {
+        const onTravailPage = !!document.querySelector('[data-page="travail"]');
+        const userType = window.__currentUser?.type;
 
-    // ════════════════════════════════════════════════════════════════
-    // ║              GESTION DE L'ASSIDUITÉ                           ║
-    // ════════════════════════════════════════════════════════════════
-
-    function renderAssiduity() {
-        const retardContainer = document.getElementById('assiduity-retard');
-        const punitionContainer = document.getElementById('assiduity-punition');
-        
-        if (!retardContainer || !punitionContainer) return;
-
-        // Afficher Retard/Absence (max 3 éléments)
-        MOCK_ASSIDUITY.retards_absences.slice(0, 3).forEach((item, index) => {
-            const item_element = document.createElement('div');
-            
-            // Déterminer la couleur selon le type
-            let bgColor = 'bg-orange-50';
-            let borderColor = 'border-orange-400';
-            let textColor = 'text-orange-700';
-            
-            if (item.type === 'Absence non justifiée') {
-                bgColor = 'bg-red-50';
-                borderColor = 'border-red-400';
-                textColor = 'text-red-700';
-            } else if (item.type === 'Absence justifiée') {
-                bgColor = 'bg-emerald-50';
-                borderColor = 'border-emerald-400';
-                textColor = 'text-emerald-700';
+        if (onTravailPage) {
+            await initTravailPage();
+        } else if (userType === 'élève' || userType === 'parent') {
+            try {
+                const res = await fetch('/api/notes');
+                currentNotes = res.ok ? await res.json() : [];
+            } catch (e) {
+                currentNotes = [];
             }
-            
-            item_element.className = `flex flex-col gap-0.5 p-1.5 ${bgColor} rounded border-l-2 ${borderColor} mb-1`;
-            
-            const typeSpan = document.createElement('span');
-            typeSpan.className = `text-[8.5px] font-bold ${textColor}`;
-            typeSpan.textContent = item.type;
-            
-            const dateSpan = document.createElement('span');
-            dateSpan.className = 'text-[7.5px] font-semibold text-slate-700';
-            dateSpan.textContent = item.date;
-            
-            item_element.appendChild(typeSpan);
-            item_element.appendChild(dateSpan);
-            
-            if (item.type === 'Retard') {
-                const heureSpan = document.createElement('span');
-                heureSpan.className = 'text-[7.5px] font-semibold text-slate-700';
-                heureSpan.textContent = `Arrivée: ${item.heure}`;
-                item_element.appendChild(heureSpan);
+            renderNotes();
+
+            try {
+                const res = await fetch('/api/devoirs/');
+                const devoirs = res.ok ? await res.json() : [];
+                renderTravail(transformDevoirs(devoirs));
+            } catch (e) {
+                renderTravail({ ds: [], devoirs: [] });
+            }
+
+            renderCours();
+        } else {
+            renderCours();
+        }
+    })();
+
+    // ════════════════════════════════════════════════════════════════
+    // ║              PAGE TRAVAIL — LOGIQUE DÉDIÉE                   ║
+    // ════════════════════════════════════════════════════════════════
+
+    let allDevoirs = [];
+    let activeCategory = 'tous';
+    let showAllDates = false;
+
+    async function initTravailPage() {
+        let user = null;
+        try {
+            const res = await fetch('/auth/me');
+            if (res.ok) user = await res.json();
+        } catch (e) {}
+
+        if (user && user.type === 'employé') {
+            const addBtn = document.getElementById('add-travail-btn');
+            if (addBtn) addBtn.classList.remove('hidden');
+            await loadModalSelects();
+            setupAddTravailModal();
+        }
+
+        await loadTravailData();
+        setupTravailFilters();
+    }
+
+    async function loadTravailData() {
+        const container = document.getElementById('travail-list');
+        if (!container) return;
+        container.innerHTML = '<div class="text-center text-slate-400 text-xs py-4">Chargement...</div>';
+
+        try {
+            const url = showAllDates ? '/api/devoirs/' : '/api/devoirs/tri/a_venir';
+            const res = await fetch(url);
+            allDevoirs = res.ok ? await res.json() : [];
+        } catch (e) {
+            allDevoirs = [];
+        }
+        renderTravailPage();
+    }
+
+    function renderTravailPage() {
+        const container = document.getElementById('travail-list');
+        const evalsSection = document.getElementById('evals-section');
+        if (!container) return;
+
+        const TYPES_RENDU = ['expose', 'projet', 'soutenance'];
+
+        let filtered = allDevoirs;
+        if (activeCategory === 'evaluation') {
+            filtered = allDevoirs.filter(d => d.type === 'controle');
+        } else if (activeCategory === 'rendu') {
+            filtered = allDevoirs.filter(d => TYPES_RENDU.includes(d.type));
+        } else if (activeCategory === 'exercice') {
+            filtered = allDevoirs.filter(d => d.type === 'exercice' || d.type === 'autre');
+        }
+
+        const devoirs = filtered.filter(d => d.type !== 'controle');
+        const evals = allDevoirs.filter(d => d.type === 'controle');
+
+        // Colonne milieu : devoirs
+        container.innerHTML = '';
+        if (devoirs.length === 0) {
+            container.innerHTML = '<div class="text-center text-slate-400 text-xs py-4">Aucun devoir à faire</div>';
+        } else {
+            const grouped = {};
+            devoirs.forEach(d => {
+                const date = formatDateFR(d.date_limite);
+                if (!grouped[date]) grouped[date] = [];
+                grouped[date].push(d);
+            });
+
+            Object.entries(grouped).forEach(([date, items]) => {
+                const dateObj = new Date(date.split('/').reverse().join('-'));
+                const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+                const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+                const header = document.createElement('div');
+                header.className = 'bg-indigo-100 text-indigo-900 text-xs font-bold p-2 rounded flex items-center justify-between cursor-pointer hover:bg-indigo-200 transition-colors';
+                header.innerHTML = `<span>Pour le ${jours[dateObj.getDay()]} ${dateObj.getDate()} ${mois[dateObj.getMonth()]}</span><i class="fas fa-chevron-down text-xs"></i>`;
+                container.appendChild(header);
+
+                const body = document.createElement('div');
+                body.className = 'flex flex-col gap-1';
+                items.forEach(d => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between gap-2 pl-3 py-1 border-l-2 border-indigo-300';
+                    const rendu = TYPES_RENDU.includes(d.type);
+                    item.innerHTML = `
+                        <div class="flex-1">
+                            <div class="text-sm font-bold text-slate-800">• ${d.matiere}</div>
+                            <div class="text-xs text-slate-600">${d.consigne || ''}</div>
+                        </div>
+                        ${rendu
+                            ? `<span class="bg-indigo-200 text-indigo-900 text-xs font-bold px-2 py-1 rounded">Rendu</span>`
+                            : `<input type="checkbox" class="w-4 h-4 cursor-pointer" title="Marquer comme fait">`
+                        }
+                    `;
+                    body.appendChild(item);
+                });
+                container.appendChild(body);
+
+                header.addEventListener('click', () => {
+                    const hidden = body.style.display === 'none';
+                    body.style.display = hidden ? 'flex' : 'none';
+                    header.querySelector('i').style.transform = hidden ? 'rotate(180deg)' : '';
+                });
+            });
+        }
+
+        // Colonne droite : évaluations
+        if (evalsSection) {
+            evalsSection.innerHTML = '';
+            if (evals.length === 0) {
+                evalsSection.innerHTML = '<div class="text-center text-slate-400 text-xs py-4">Aucune évaluation</div>';
             } else {
-                const heuresSpan = document.createElement('span');
-                heuresSpan.className = 'text-[7.5px] font-semibold text-slate-700';
-                heuresSpan.textContent = `${item.debut} - ${item.fin}`;
-                item_element.appendChild(heuresSpan);
+                evals.forEach(d => {
+                    const item = document.createElement('div');
+                    item.className = 'bg-violet-100 border-l-4 border-violet-500 p-2 rounded';
+                    item.innerHTML = `
+                        <div class="text-sm font-bold text-violet-800">${d.matiere}</div>
+                        <div class="text-xs text-violet-600">${formatDateFR(d.date_limite)}</div>
+                        ${d.consigne ? `<div class="text-xs text-slate-600 mt-1">${d.consigne}</div>` : ''}
+                    `;
+                    evalsSection.appendChild(item);
+                });
             }
-            
-            retardContainer.appendChild(item_element);
+        }
+    }
+
+    function setupTravailFilters() {
+        const aFaireBtn = document.getElementById('filter-a-faire-btn');
+        const toutBtn = document.getElementById('filter-tout-btn');
+        const catBtns = {
+            'tous': document.getElementById('cat-tous-btn'),
+            'evaluation': document.getElementById('cat-evaluation-btn'),
+            'rendu': document.getElementById('cat-rendu-btn'),
+            'exercice': document.getElementById('cat-exercice-btn'),
+        };
+
+        if (aFaireBtn) aFaireBtn.addEventListener('click', async () => {
+            showAllDates = false;
+            aFaireBtn.className = 'px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded transition-colors';
+            if (toutBtn) toutBtn.className = 'px-4 py-1.5 text-xs font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded transition-colors';
+            await loadTravailData();
         });
 
-        // Afficher Punitions (max 3 éléments)
-        MOCK_ASSIDUITY.punitions.slice(0, 3).forEach((item, index) => {
-            const item_element = document.createElement('div');
-            item_element.className = 'flex flex-col gap-0.5 p-1.5 bg-orange-50 rounded border-l-2 border-orange-400 mb-1';
-            
-            const typeSpan = document.createElement('span');
-            typeSpan.className = 'text-[8.5px] font-bold text-orange-700';
-            typeSpan.textContent = item.type;
-            
-            const dateSpan = document.createElement('span');
-            dateSpan.className = 'text-[7.5px] font-semibold text-slate-700';
-            dateSpan.textContent = item.date;
-            
-            // Heure et personne sur la même ligne
-            const infoLine = document.createElement('div');
-            infoLine.className = 'text-[7.5px] font-semibold text-slate-700 flex items-center gap-1';
-            infoLine.textContent = `${item.heure} • ${item.salle} • ${item.par}`;
-            
-            item_element.appendChild(typeSpan);
-            item_element.appendChild(dateSpan);
-            item_element.appendChild(infoLine);
-            
-            punitionContainer.appendChild(item_element);
+        if (toutBtn) toutBtn.addEventListener('click', async () => {
+            showAllDates = true;
+            toutBtn.className = 'px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded transition-colors';
+            if (aFaireBtn) aFaireBtn.className = 'px-4 py-1.5 text-xs font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded transition-colors';
+            await loadTravailData();
+        });
+
+        Object.entries(catBtns).forEach(([cat, btn]) => {
+            if (!btn) return;
+            btn.addEventListener('click', () => {
+                activeCategory = cat;
+                Object.values(catBtns).forEach(b => {
+                    if (!b) return;
+                    b.className = 'px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left';
+                });
+                btn.className = 'px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors text-left';
+                renderTravailPage();
+            });
         });
     }
 
-    renderAssiduity();
+    async function loadModalSelects() {
+        try {
+            const res = await fetch('/api/notes/classes');
+            if (!res.ok) return;
+            const data = await res.json();
 
-    renderCours();
+            const classeSelect = document.getElementById('devoir-classe');
+            const matiereSelect = document.getElementById('devoir-matiere');
+            if (!classeSelect || !matiereSelect) return;
+
+            const combinaisons = data.combinaisons || [];
+            const toutesLesMatieres = data.matieres || [];
+
+            data.classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nom;
+                classeSelect.appendChild(opt);
+            });
+
+            function filtrerMatieres() {
+                matiereSelect.innerHTML = '<option value="">-- Sélectionner une matière --</option>';
+                const idClasse = parseInt(classeSelect.value);
+                if (!idClasse) return;
+                const idsAutorises = combinaisons
+                    .filter(c => c.id_classe === idClasse)
+                    .map(c => c.id_matiere);
+                toutesLesMatieres
+                    .filter(m => idsAutorises.includes(m.id))
+                    .forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = m.nom;
+                        matiereSelect.appendChild(opt);
+                    });
+            }
+
+            classeSelect.addEventListener('change', filtrerMatieres);
+        } catch (e) {}
+    }
+
+    function setupAddTravailModal() {
+        const addBtn = document.getElementById('add-travail-btn');
+        const closeBtn = document.getElementById('close-modal-btn');
+        const createBtn = document.getElementById('create-devoir-btn');
+        const modal = document.getElementById('add-travail-modal');
+
+        if (addBtn) addBtn.addEventListener('click', () => modal && modal.classList.remove('hidden'));
+        if (closeBtn) closeBtn.addEventListener('click', () => modal && modal.classList.add('hidden'));
+        if (modal) modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+        if (createBtn) createBtn.addEventListener('click', createDevoir);
+    }
+
+    async function createDevoir() {
+        const classeId = document.getElementById('devoir-classe')?.value;
+        const matiereId = document.getElementById('devoir-matiere')?.value;
+        const type = document.getElementById('devoir-type')?.value;
+        const consigne = document.getElementById('devoir-consigne')?.value;
+        const dateLimite = document.getElementById('devoir-date-limite')?.value;
+        const errorDiv = document.getElementById('modal-error');
+
+        if (!classeId || !matiereId || !consigne || !dateLimite) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Tous les champs sont requis.';
+                errorDiv.classList.remove('hidden');
+            }
+            return;
+        }
+        if (errorDiv) errorDiv.classList.add('hidden');
+
+        try {
+            const res = await fetch('/api/devoirs/creer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_classe: parseInt(classeId),
+                    id_matiere: parseInt(matiereId),
+                    type: type,
+                    consigne: consigne,
+                    date_limite: dateLimite,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Erreur serveur');
+            }
+
+            document.getElementById('add-travail-modal')?.classList.add('hidden');
+            document.getElementById('devoir-consigne').value = '';
+            document.getElementById('devoir-date-limite').value = '';
+            await loadTravailData();
+        } catch (err) {
+            if (errorDiv) {
+                errorDiv.textContent = err.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+    }
 
     // ════════════════════════════════════════════════════════════════
     // ║                   FIN DU SCRIPT                               ║
@@ -883,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return weekNumber % 2 === 1 ? 'A' : 'B';
     }
 
-    function formatDateFR(date) {
+    function formatDateObjFR(date) {
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
@@ -952,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mettre à jour l'affichage des dates
         const weekDatesSpan = document.getElementById('week-dates');
         if (weekDatesSpan) {
-            weekDatesSpan.textContent = `du ${formatDateFR(startOfWeek)} au ${formatDateFR(endOfWeek)}`;
+            weekDatesSpan.textContent = `du ${formatDateObjFR(startOfWeek)} au ${formatDateObjFR(endOfWeek)}`;
         }
         
         // Mettre à jour le type de semaine (A ou B)
@@ -973,7 +1153,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Exposer la semaine courante et charger les cours depuis l'API
         window.currentWeekStart = startOfWeek;
-        loadCours(startOfWeek);
+        const classeSelect = document.getElementById('edt-classe-select');
+        loadCours(startOfWeek, classeSelect ? classeSelect.value || null : null);
 
         // Émettre un événement personnalisé
         document.body.dispatchEvent(new CustomEvent('week-selected', { detail: { week, startDate: startOfWeek } }));
@@ -1029,15 +1210,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Sélecteur de classe pour admin/direction sur la page EDT
+    async function initEdtClasseSelect() {
+        const select = document.getElementById('edt-classe-select');
+        if (!select) return;
+
+        try {
+            const res = await fetch('/edt/classes');
+            if (!res.ok) return;
+            const classes = await res.json();
+            classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.label;
+                select.appendChild(opt);
+            });
+            select.classList.remove('hidden');
+
+            const title = document.getElementById('edt-page-title');
+            if (title) title.textContent = 'Emploi du temps';
+
+            select.addEventListener('change', () => {
+                if (window.currentWeekStart) {
+                    loadCours(window.currentWeekStart, select.value || null);
+                }
+            });
+        } catch (e) {
+            // Non admin/direction : le sélecteur reste caché
+        }
+    }
+
     // Initialiser les semaines au chargement
-    window.addEventListener('load', () => {
+    window.addEventListener('load', async () => {
         generateWeeks();
         const today = new Date();
         const currentWeek = getWeekNumberForRange(today);
+        await initEdtClasseSelect();
         if (currentWeek > 0 && currentWeek <= 53) {
             selectWeek(currentWeek);
         } else {
-            // Si on est pas dans la plage, afficher la semaine 1
             selectWeek(1);
         }
     });

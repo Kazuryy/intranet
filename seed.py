@@ -11,7 +11,7 @@ import random
 from app import bcrypt, create_app
 from app.models import (
     db, User, Direction, Prof, Eleve, Parent, Employe,
-    Classe, Matiere, Cours, Evaluation, Batiment, Etage, Salle,
+    Classe, Matiere, Cours, Evaluation, Batiment, Etage, Salle, prof_matiere, Devoir,
 )
 
 RESET = '--reset' in sys.argv
@@ -84,7 +84,9 @@ def hash_pwd(pwd):
 
 def reset_tables():
     print("  Suppression des donnees existantes...")
-    for model in [Evaluation, Cours, Eleve, Parent, Prof, Direction, Employe,
+    db.session.execute(db.text('DELETE FROM prof_matiere'))
+    db.session.commit()
+    for model in [Evaluation, Devoir, Cours, Eleve, Parent, Prof, Direction, Employe,
                   Salle, Etage, Batiment, Matiere, Classe, User]:
         db.session.query(model).delete()
     db.session.commit()
@@ -95,10 +97,12 @@ def reset_tables():
 
 def seed():
     with app.app_context():
+        if RESET:
+            db.drop_all()
         db.create_all()
 
         if RESET:
-            reset_tables()
+            pass  # tables already empty after drop_all
 
         print("\n[1/8] Admin...")
         admin_user = User(
@@ -226,7 +230,7 @@ def seed():
                         id_classe=classe.id,
                         debut=debut,
                         fin=fin,
-                        etat='planifié',
+                        etat='planifie',
                         id_salle=salle.id,
                     )
                     db.session.add(cours)

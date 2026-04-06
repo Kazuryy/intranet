@@ -7,36 +7,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="auth-guard.js"></script>
+    <script>
+        document.addEventListener('auth-ready', (e) => {
+            const type = e.detail.type;
+            if (type === 'administrateur') {
+                window.location.replace('/admin');
+            } else if (type === 'employé') {
+                window.location.replace('/edt');
+            }
+        });
+    </script>
+    <script src="header.js" defer></script>
     <script src="user-menu.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body class="m-0 font-sans text-slate-800">
-    
-    <div class="h-[10vh] flex flex-col shadow-md z-50 relative">
-        <div class="h-[9vh] bg-white flex items-center justify-center">
-            <h1 class="m-0 text-3xl text-indigo-900 font-bold">PRONOTE V2 TEST</h1>
-        </div>
-        <div class="h-[6vh] bg-indigo-900 flex items-center justify-between">
-            <nav class="flex items-center" role="tablist" aria-label="Onglets principaux">
-                <button role="tab" data-tab="accueil" data-href="/" aria-selected="true"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Accueil
-                </button>
-                <button role="tab" data-tab="edt" data-href="/edt" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Emploi du temps
-                </button>
-                <button role="tab" data-tab="notes" data-href="/notes" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Notes
-                </button>
-                <button role="tab" data-tab="cahier-textes" data-href="/travail" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Cahier de textes
-                </button>
-            </nav>
-        </div>
-    </div>
 
     <div class="relative z-10 flex flex-col items-center h-[95vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-6">
         
@@ -199,39 +184,6 @@
                             <i class="fas fa-arrow-right" aria-hidden="true"></i>
                         </a>
                     </div>
-                </div>
-            </div>
-            <div class="flex-1 h-full flex flex-col gap-[1%]">
-                <div class="flex-[3] bg-white shadow-md flex items-center justify-center text-blue-500 font-bold text-xl hover:shadow-lg transition-shadow">BIENTÔT DISPONIBLE</div>
-                <div class="flex-[5] bg-white shadow-md rounded-2xl flex flex-col hover:shadow-lg transition-shadow overflow-hidden">
-                    <div class="p-2 border-b border-slate-100 bg-slate-50/50 h-10 flex items-center">
-                        <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Carnet de correspondance</h3>
-                    </div>
-                    <div class="flex-1 flex gap-[0.5%] p-2 overflow-hidden">
-                        <!-- Retard/Absence -->
-                        <div class="flex-1 flex flex-col gap-2 border-r border-slate-200 pr-2 overflow-y-auto">
-                            <div class="text-[10px] font-bold text-rose-700 uppercase">Retard/Absence</div>
-                            <div id="assiduity-retard" class="text-[10px] text-slate-700"></div>
-                        </div>
-                        <!-- Punition -->
-                        <div class="flex-1 flex flex-col gap-2 overflow-y-auto">
-                            <div class="text-[10px] font-bold text-orange-700 uppercase">Punition</div>
-                            <div id="assiduity-punition" class="text-[10px] text-slate-700"></div>
-                        </div>
-                    </div>
-                    <div class="p-1.5 border-t border-slate-100 flex justify-end">
-                        <a href="assiduity.html" class="text-indigo-700 hover:text-indigo-900 hover:scale-105 transition-transform transition-colors text-sm inline-flex items-center gap-2" aria-label="Voir l'assiduité complète">
-                            <span class="text-[9px] font-medium">Voir plus</span>
-                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="flex-1 h-full flex flex-col gap-[1%]">
-                <div class="flex-[3] bg-white shadow-md flex items-center justify-center text-emerald-500 font-bold text-xl hover:shadow-lg transition-shadow">MAIL</div>
-                <div class="flex-[5] bg-slate-200/50 flex flex-col gap-[1%] shadow-inner border border-white/50">
-                    <div class="flex-[5] bg-white shadow-sm flex items-center justify-center text-purple-600 font-bold text-xl hover:shadow-md transition-shadow">MESSAGE</div>
-                    <div class="flex-[3] bg-slate-800 shadow-md flex items-center justify-center text-white font-bold hover:bg-slate-700 transition-colors cursor-pointer">MENU</div>
                 </div>
             </div>
         </div>
