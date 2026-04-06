@@ -16,6 +16,9 @@ Flask-Limiter==4.1.1
 # Headers sécurité
 Flask-Talisman==1.1.0
 
+# Sanitisation HTML
+bleach==6.2.0
+
 # Tests
 pytest==8.3.5
 pytest-cov==6.0.0
