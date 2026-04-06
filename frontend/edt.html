@@ -6,6 +6,8 @@
     <title>Mon Site Web - Grille Uniforme</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <script src="user-menu.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body class="m-0 font-sans text-slate-800">
@@ -16,38 +18,38 @@
         </div>
         <div class="h-[6vh] bg-indigo-900 flex items-center justify-between">
             <nav class="flex items-center" role="tablist" aria-label="Onglets principaux">
-                <button role="tab" data-tab="accueil" data-href="index.html" aria-selected="true"
+                <button role="tab" data-tab="accueil" data-href="/" aria-selected="true"
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Accueil
                 </button>
-                <button role="tab" data-tab="edt" data-href="edt.html" aria-selected="false"
+                <button role="tab" data-tab="edt" data-href="/edt" aria-selected="false"
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Emploi du temps
                 </button>
                 <div class="relative">
-                    <button id="resultats-btn" role="tab" data-tab="resultats" data-href="resultats.html" aria-selected="false" aria-expanded="false"
+                    <button id="resultats-btn" role="tab" data-tab="resultats" data-href="/resultats" aria-selected="false" aria-expanded="false"
                         class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                         Résultats
                     </button>
                     <div id="resultats-menu" class="hidden absolute top-full left-0 w-[200%] bg-white shadow-lg rounded-b-lg py-2 z-50">
                         <div class="px-0 py-2 border-b border-slate-200">
-                            <button data-href="notes.html" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Mes notes</button>
-                            <button data-href="releve.html" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Relevé</button>
+                            <button data-href="/notes" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Mes notes</button>
+                            <button data-href="/releve" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Relevé</button>
                         </div>
                         <div class="px-0 py-2">
-                            <button data-href="bulletin.html" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Mon Bulletin</button>
+                            <button data-href="/bulletin" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Mon Bulletin</button>
                         </div>
                     </div>
                 </div>
-                <button role="tab" data-tab="cahier-textes" data-href="travail.html" aria-selected="false"
+                <button role="tab" data-tab="cahier-textes" data-href="/travail" aria-selected="false"
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Cahier de textes
                 </button>
-                <button role="tab" data-tab="cartne-correspondance" data-href="assiduity.html" aria-selected="false"
+                <button role="tab" data-tab="cartne-correspondance" data-href="/assiduity" aria-selected="false"
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Carnet de correspondance
                 </button>
-                <button role="tab" data-tab="communication" data-href="communication.html" aria-selected="false"
+                <button role="tab" data-tab="communication" data-href="/communication" aria-selected="false"
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Communication
                 </button>
@@ -70,6 +72,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="btn-new-cours" class="hidden bg-indigo-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Nouveau cours
+                    </button>
                     <button id="export-ical-btn" class="flex items-center justify-center w-7 h-7 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-colors" title="Exporter au format iCal">
                         <i class="fas fa-calendar text-lg"></i>
                     </button>
@@ -311,4 +316,391 @@
         .devoir-checkbox:checked {
             accent-color: #818cf8;
         }
+        .cours-annule {
+            opacity: 0.45;
+            text-decoration: line-through;
+        }
     </style>
+
+    <!-- Modal édition de cours -->
+    <div id="modal-edit-cours" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-md p-6 mx-4">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Modifier le cours</h3>
+            <div id="edit-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="edit-error-msg"></span>
+            </div>
+            <form id="form-edit-cours" novalidate class="space-y-3">
+                <input type="hidden" id="edit-cours-id">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matiere</label>
+                    <select id="e-matiere" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div id="e-prof-row">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Professeur</label>
+                    <select id="e-prof" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="e-classe" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Debut</label>
+                        <input type="datetime-local" id="e-debut" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Fin</label>
+                        <input type="datetime-local" id="e-fin" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Salle (optionnel)</label>
+                    <select id="e-salle" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Etat</label>
+                    <select id="e-etat" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="planifié">Planifie</option>
+                        <option value="en cours">En cours</option>
+                        <option value="terminé">Termine</option>
+                        <option value="annulé">Annule</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="btn-delete-cours" class="px-3 py-2 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                    <button type="button" id="btn-cancel-edit-cours" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-edit-cours" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="edit-btn-text">Enregistrer</span>
+                        <i id="edit-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal création de cours (admin / direction / prof) -->
+    <div id="modal-cours" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/90 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-md p-6 mx-4">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouveau cours</h3>
+            <div id="modal-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="modal-error-msg"></span>
+            </div>
+            <form id="form-cours" novalidate class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matiere</label>
+                    <select id="c-matiere" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div id="c-prof-row">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Professeur</label>
+                    <select id="c-prof" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="c-classe" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Debut</label>
+                        <input type="datetime-local" id="c-debut" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Fin</label>
+                        <input type="datetime-local" id="c-fin" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Salle (optionnel)</label>
+                    <select id="c-salle" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="btn-cancel-cours" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-cours" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="submit-text">Creer</span>
+                        <i id="submit-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ── Role & bouton creation ─────────────────────────────────────────
+        let selectsLoaded = false;
+
+        async function initRole() {
+            const user = window.__currentUser;
+            if (!user) return;
+
+            const role = user.type;
+            const mayCreate = role === 'administrateur' || role === 'employé';
+            if (!mayCreate) return;
+
+            // Verifier cote serveur que l'acces aux listes est autorise
+            const probe = await fetch('/edt/matieres').catch(() => null);
+            if (!probe || !probe.ok) return;
+
+            document.getElementById('btn-new-cours').classList.remove('hidden');
+            document.getElementById('btn-new-cours').addEventListener('click', openCreateModal);
+        }
+
+        // ── Chargement lazy des selects (a l'ouverture du modal) ─────────
+
+        function fillSelect(id, items, labelField, placeholder, labelFn) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = labelFn ? labelFn(item) : item[labelField];
+                sel.appendChild(opt);
+            });
+        }
+
+        async function loadSelectData() {
+            if (selectsLoaded) return;
+
+            const [mRes, pRes, cRes, sRes] = await Promise.all([
+                fetch('/edt/matieres'),
+                fetch('/edt/profs'),
+                fetch('/edt/classes'),
+                fetch('/edt/salles'),
+            ]);
+
+            if (mRes.ok) fillSelect('c-matiere', await mRes.json(), 'nom', '-- Matiere --');
+            if (pRes.ok) fillSelect('c-prof', await pRes.json(), null, '-- Professeur --', p => `${p.prenom} ${p.nom}`);
+            if (cRes.ok) fillSelect('c-classe', await cRes.json(), 'label', '-- Classe --');
+            if (sRes.ok) fillSelect('c-salle', await sRes.json(), 'nom', '-- Aucune --');
+
+            if (!pRes.ok) {
+                document.getElementById('c-prof-row').classList.add('hidden');
+                document.getElementById('c-prof').removeAttribute('required');
+            }
+
+            selectsLoaded = true;
+        }
+
+        // ── Modal ─────────────────────────────────────────────────────────
+
+        async function openCreateModal() {
+            document.getElementById('modal-error').classList.add('hidden');
+            document.getElementById('form-cours').reset();
+            document.getElementById('modal-cours').classList.remove('hidden');
+
+            await loadSelectData();
+
+            const start = window.currentWeekStart;
+            if (start) {
+                const today = new Date();
+                const base = new Date(start);
+                const dayOffset = today >= start
+                    ? Math.min(Math.floor((today - start) / 86400000), 4)
+                    : 0;
+                base.setDate(base.getDate() + dayOffset);
+                const pad = n => String(n).padStart(2, '0');
+                const dateStr = `${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`;
+                document.getElementById('c-debut').value = `${dateStr}T08:00`;
+                document.getElementById('c-fin').value   = `${dateStr}T09:00`;
+            }
+        }
+
+        document.getElementById('btn-cancel-cours').addEventListener('click', () => {
+            document.getElementById('modal-cours').classList.add('hidden');
+        });
+
+        document.getElementById('form-cours').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('modal-error').classList.add('hidden');
+
+            const id_matiere = parseInt(document.getElementById('c-matiere').value);
+            const id_prof    = parseInt(document.getElementById('c-prof').value) || undefined;
+            const id_classe  = parseInt(document.getElementById('c-classe').value);
+            const debut      = document.getElementById('c-debut').value;
+            const fin        = document.getElementById('c-fin').value;
+            const id_salle   = parseInt(document.getElementById('c-salle').value) || undefined;
+
+            if (!id_matiere || !id_classe || !debut || !fin) {
+                document.getElementById('modal-error-msg').textContent = 'Matiere, classe, debut et fin sont requis.';
+                document.getElementById('modal-error').classList.remove('hidden');
+                return;
+            }
+            if (debut >= fin) {
+                document.getElementById('modal-error-msg').textContent = 'La fin doit etre apres le debut.';
+                document.getElementById('modal-error').classList.remove('hidden');
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit-cours');
+            const spinner   = document.getElementById('submit-spinner');
+            const btnText   = document.getElementById('submit-text');
+            submitBtn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Creation...';
+
+            const body = { id_matiere, id_classe, debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString() };
+            if (id_prof)  body.id_prof  = id_prof;
+            if (id_salle) body.id_salle = id_salle;
+
+            try {
+                const res = await fetch('/edt/cours', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('modal-error-msg').textContent = data.error || 'Erreur serveur.';
+                    document.getElementById('modal-error').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('modal-cours').classList.add('hidden');
+                if (window.currentWeekStart) loadCours(window.currentWeekStart);
+            } catch {
+                document.getElementById('modal-error-msg').textContent = 'Impossible de joindre le serveur.';
+                document.getElementById('modal-error').classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = 'Creer';
+            }
+        });
+
+        // ── Edition de cours ──────────────────────────────────────────────
+
+        function toLocalDT(isoStr) {
+            // Convertit "2026-04-03T06:00:00Z" en "2026-04-03T08:00" (heure locale)
+            const d = new Date(isoStr);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        async function openEditModal(coursId) {
+            const cours = MOCK_COURS.find(c => c._id === coursId);
+            if (!cours || !cours._raw) return;
+            const raw = cours._raw;
+
+            await loadSelectData();
+
+            document.getElementById('edit-cours-id').value = coursId;
+            document.getElementById('e-matiere').value   = raw.matiere?.id || '';
+            document.getElementById('e-prof').value      = raw.prof?.id    || '';
+            document.getElementById('e-classe').value    = raw.classe?.id  || '';
+            document.getElementById('e-salle').value     = raw.salle?.id   || '';
+            document.getElementById('e-etat').value      = raw.etat        || 'planifié';
+            document.getElementById('e-debut').value     = toLocalDT(raw.debut);
+            document.getElementById('e-fin').value       = toLocalDT(raw.fin);
+
+            // Synchroniser selects edit depuis selects create (deja peuples)
+            ['matiere','prof','classe','salle'].forEach(field => {
+                const src = document.getElementById(`c-${field}`);
+                const dst = document.getElementById(`e-${field}`);
+                if (src && dst && dst.options.length <= 1) {
+                    dst.innerHTML = src.innerHTML;
+                }
+            });
+            document.getElementById('e-matiere').value = raw.matiere?.id || '';
+            document.getElementById('e-prof').value    = raw.prof?.id    || '';
+            document.getElementById('e-classe').value  = raw.classe?.id  || '';
+            document.getElementById('e-salle').value   = raw.salle?.id   || '';
+
+            document.getElementById('edit-error').classList.add('hidden');
+            document.getElementById('modal-edit-cours').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-cancel-edit-cours').addEventListener('click', () => {
+            document.getElementById('modal-edit-cours').classList.add('hidden');
+        });
+
+        document.getElementById('btn-delete-cours').addEventListener('click', async () => {
+            if (!confirm('Supprimer ce cours ?')) return;
+            const id = document.getElementById('edit-cours-id').value;
+            const res = await fetch(`/edt/cours/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                document.getElementById('modal-edit-cours').classList.add('hidden');
+                if (window.currentWeekStart) loadCours(window.currentWeekStart);
+            } else {
+                const d = await res.json();
+                document.getElementById('edit-error-msg').textContent = d.error || 'Erreur';
+                document.getElementById('edit-error').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('form-edit-cours').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('edit-error').classList.add('hidden');
+
+            const id        = document.getElementById('edit-cours-id').value;
+            const id_matiere = parseInt(document.getElementById('e-matiere').value) || undefined;
+            const id_prof    = parseInt(document.getElementById('e-prof').value)    || undefined;
+            const id_classe  = parseInt(document.getElementById('e-classe').value)  || undefined;
+            const id_salle   = parseInt(document.getElementById('e-salle').value)   || undefined;
+            const etat       = document.getElementById('e-etat').value;
+            const debut      = document.getElementById('e-debut').value;
+            const fin        = document.getElementById('e-fin').value;
+
+            if (!debut || !fin || debut >= fin) {
+                document.getElementById('edit-error-msg').textContent = 'Dates invalides.';
+                document.getElementById('edit-error').classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-edit-cours');
+            const spinner = document.getElementById('edit-spinner');
+            const btnText = document.getElementById('edit-btn-text');
+            btn.disabled = true; spinner.classList.remove('hidden'); btnText.textContent = 'Enregistrement...';
+
+            const body = { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), etat };
+            if (id_matiere) body.id_matiere = id_matiere;
+            if (id_prof)    body.id_prof    = id_prof;
+            if (id_classe)  body.id_classe  = id_classe;
+            if (id_salle !== undefined) body.id_salle = id_salle || null;
+
+            try {
+                const res = await fetch(`/edt/cours/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('edit-error-msg').textContent = data.error || 'Erreur serveur.';
+                    document.getElementById('edit-error').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('modal-edit-cours').classList.add('hidden');
+                if (window.currentWeekStart) loadCours(window.currentWeekStart);
+            } catch {
+                document.getElementById('edit-error-msg').textContent = 'Impossible de joindre le serveur.';
+                document.getElementById('edit-error').classList.remove('hidden');
+            } finally {
+                btn.disabled = false; spinner.classList.add('hidden'); btnText.textContent = 'Enregistrer';
+            }
+        });
+
+        // Clic sur un bloc de cours (delegation)
+        document.addEventListener('click', (e) => {
+            const block = e.target.closest('.cours-block[data-cours-id]');
+            if (!block) return;
+            const user = window.__currentUser;
+            if (!user || (user.type !== 'administrateur' && user.type !== 'employé')) return;
+            openEditModal(parseInt(block.dataset.coursId));
+        });
+
+        // Attendre que auth-guard ait expose window.__currentUser
+        if (window.__currentUser) {
+            initRole();
+        } else {
+            document.addEventListener('auth-ready', () => initRole());
+        }
+    </script>
+</body>
+</html>

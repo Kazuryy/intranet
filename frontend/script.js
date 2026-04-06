@@ -2,6 +2,44 @@
 // ║                    DONNÉES & CONFIGURATION                    ║
 // ════════════════════════════════════════════════════════════════
 
+// ─── EDT API ────────────────────────────────────────────────────
+const JOUR_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+function apiToMock(c) {
+    const debut = new Date(c.debut);
+    const fin   = new Date(c.fin);
+    return {
+        _id:     c.id,
+        _raw:    c,
+        jour:    JOUR_NAMES[debut.getDay()],
+        debut:   debut.getHours() + debut.getMinutes() / 60,
+        fin:     fin.getHours()   + fin.getMinutes()   / 60,
+        matiere: c.matiere?.nom || 'Inconnu',
+        prof:    (c.prof?.prenom && c.prof?.nom) ? `${c.prof.prenom} ${c.prof.nom}` : '',
+        salle:   c.salle?.nom || '',
+        etat:    c.etat,
+        _annule: c.etat === 'annulé',
+    };
+}
+
+async function loadCours(startDate) {
+    const debut = new Date(startDate);
+    debut.setHours(0, 0, 0, 0);
+    const fin = new Date(startDate);
+    fin.setDate(fin.getDate() + 6);
+    fin.setHours(23, 59, 59, 999);
+    try {
+        const params = new URLSearchParams({ debut: debut.toISOString(), fin: fin.toISOString() });
+        const res = await fetch('/edt/cours?' + params.toString());
+        if (!res.ok) return;
+        const data = await res.json();
+        MOCK_COURS.splice(0, MOCK_COURS.length, ...data.map(apiToMock));
+        renderCours();
+    } catch (e) {
+        console.error('Erreur chargement EDT:', e);
+    }
+}
+
 // ─── MOCK SQL DATA / API CALLS ─────────────────────────────────
 const MOCK_COURS = [
     { jour: 'lundi',    debut: 8.0,  fin: 9.0,  matiere: 'Mathématiques',    prof: 'M. Dupont',    salle: 'A101' },
@@ -138,6 +176,7 @@ function renderCours() {
 
                     const block = document.createElement('div');
                     block.className = 'cours-block';
+                    if (cours._id) block.dataset.coursId = cours._id;
                     
                     // On injecte left et width en % au lieu de forcer à 4px du bord
                     block.style.cssText = `
@@ -648,15 +687,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Mapping entre fichiers et data-tab
             const pageMap = {
-                'index.html': 'accueil',
-                'edt.html': 'edt',
-                'resultats.html': 'resultats',
-                'notes.html': 'resultats',
-                'releve.html': 'resultats',
-                'bulletin.html': 'resultats',
-                'travail.html': 'cahier-textes',
-                'assiduity.html': 'cartne-correspondance',
-                'communication.html': 'communication'
+                '/': 'accueil',
+                '/edt': 'edt',
+                '/resultats': 'resultats',
+                '/notes': 'resultats',
+                '/releve': 'resultats',
+                '/bulletin': 'resultats',
+                '/travail': 'cahier-textes',
+                '/assiduity': 'cartne-correspondance',
+                '/communication': 'communication'
             };
             
             return pageMap[currentFile] || 'accueil';
@@ -940,7 +979,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Mettre à jour l'affichage des jours
         updateDaysDisplay(startOfWeek);
-        
+
+        // Exposer la semaine courante et charger les cours depuis l'API
+        window.currentWeekStart = startOfWeek;
+        loadCours(startOfWeek);
+
         // Émettre un événement personnalisé
         document.body.dispatchEvent(new CustomEvent('week-selected', { detail: { week, startDate: startOfWeek } }));
     }

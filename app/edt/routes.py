@@ -3,7 +3,9 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
 from . import edt_bp
-from ..models import db, Classe, Cours, Eleve, Log, Matiere, Parent, Prof, Salle
+from ..models import (
+    db, Classe, Cours, Eleve, Log, Matiere, Parent, Prof, Salle, User
+)
 from ..decorators import is_direction, role_required
 
 
@@ -22,8 +24,8 @@ def _log(action, target_id=None):
 def _cours_to_dict(c):
     return {
         'id': c.id,
-        'debut': c.debut.isoformat(),
-        'fin': c.fin.isoformat(),
+        'debut': c.debut.isoformat() + 'Z',
+        'fin': c.fin.isoformat() + 'Z',
         'etat': c.etat,
         'matiere': {'id': c.id_matiere, 'nom': c.matiere.nom if c.matiere else None},
         'classe': {
@@ -278,3 +280,57 @@ def delete_cours(cours_id):
     db.session.commit()
 
     return jsonify({'message': 'Cours supprimé'}), 200
+
+
+# ── Listes pour le formulaire de création ──────────────────────────────────
+
+@edt_bp.get('/matieres')
+@login_required
+@role_required('administrateur', 'employé')
+def list_matieres():
+    if current_user.type == 'employé' and not is_direction():
+        return jsonify({'error': 'Accès refusé'}), 403
+    matieres = Matiere.query.order_by(Matiere.nom).all()
+    return jsonify([{'id': m.id, 'nom': m.nom} for m in matieres]), 200
+
+
+@edt_bp.get('/classes')
+@login_required
+@role_required('administrateur', 'employé')
+def list_classes():
+    if current_user.type == 'employé' and not is_direction():
+        return jsonify({'error': 'Accès refusé'}), 403
+    classes = Classe.query.order_by(
+        Classe.annee.desc(), Classe.niveau, Classe.suffixe
+    ).all()
+    return jsonify([{
+        'id': c.id,
+        'label': f'{c.niveau}{c.suffixe or ""} ({c.annee})'
+    } for c in classes]), 200
+
+
+@edt_bp.get('/profs')
+@login_required
+@role_required('administrateur', 'employé')
+def list_profs():
+    if current_user.type == 'employé' and not is_direction():
+        return jsonify({'error': 'Accès refusé'}), 403
+    profs = (Prof.query
+             .join(Prof.user)
+             .order_by(User.nom, User.prenom)
+             .all())
+    return jsonify([{
+        'id': p.id,
+        'nom': p.user.nom,
+        'prenom': p.user.prenom,
+    } for p in profs]), 200
+
+
+@edt_bp.get('/salles')
+@login_required
+@role_required('administrateur', 'employé')
+def list_salles():
+    if current_user.type == 'employé' and not is_direction():
+        return jsonify({'error': 'Accès refusé'}), 403
+    salles = Salle.query.order_by(Salle.nom).all()
+    return jsonify([{'id': s.id, 'nom': s.nom} for s in salles]), 200
