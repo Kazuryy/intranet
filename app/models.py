@@ -33,10 +33,11 @@ class User(UserMixin, db.Model):
     setup_token_expires = db.Column(db.DateTime, nullable=True)
 
     def get_id(self):
-        # Dérive un token via HMAC(SECRET_KEY, password_hash) - n'expose jamais le hash brut.
-        # Si le compte est recréé (hash différent), la session devient automatiquement invalide.
+        # Dérive un token HMAC(SECRET_KEY, password_hash).
+        # N'expose pas le hash brut ; invalide la session si le compte est recréé.
         secret = current_app.config['SECRET_KEY'].encode()
-        digest = hmac.new(secret, (self.password or '').encode(), hashlib.sha256).hexdigest()[:16]
+        msg = (self.password or '').encode()
+        digest = hmac.new(secret, msg, hashlib.sha256).hexdigest()[:16]
         return f"{self.id}.{digest}"
 
 
