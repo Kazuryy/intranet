@@ -27,32 +27,13 @@
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Emploi du temps
                 </button>
-                <div class="relative">
-                    <button id="resultats-btn" role="tab" data-tab="resultats" data-href="/resultats" aria-selected="true" aria-expanded="false"
-                        class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                        Résultats
-                    </button>
-                    <div id="resultats-menu" class="hidden absolute top-full left-0 w-[200%] bg-white shadow-lg rounded-b-lg py-2 z-50">
-                        <div class="px-0 py-2 border-b border-slate-200">
-                            <button data-href="/notes" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Mes notes</button>
-                            <button data-href="/releve" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Relevé</button>
-                        </div>
-                        <div class="px-0 py-2">
-                            <button data-href="/bulletin" class="menu-link block w-full px-4 py-2 text-sm font-semibold text-indigo-900 border-l-4 border-transparent hover:border-red-500 hover:bg-indigo-50 transition-colors text-left">Mon Bulletin</button>
-                        </div>
-                    </div>
-                </div>
+                <button role="tab" data-tab="notes" data-href="/notes" aria-selected="true"
+                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
+                    Notes
+                </button>
                 <button role="tab" data-tab="cahier-textes" data-href="/travail" aria-selected="false"
                     class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
                     Cahier de textes
-                </button>
-                <button role="tab" data-tab="cartne-correspondance" data-href="/assiduity" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Carnet de correspondance
-                </button>
-                <button role="tab" data-tab="communication" data-href="/communication" aria-selected="false"
-                    class="tab-btn px-3 py-3 text-sm font-bold text-white border-b-4 border-indigo-900 hover:transition hover:bg-white hover:text-indigo-900 hover:border-b-4 hover:border-red-500">
-                    Communication
                 </button>
             </nav>
         </div>
@@ -413,27 +394,37 @@
             o.value = c.id; o.textContent = c.nom;
             classeSelect.appendChild(o);
         });
-        data.matieres.forEach(m => {
-            const o = document.createElement('option');
-            o.value = m.id; o.textContent = m.nom;
-            matiereSelect.appendChild(o);
-        });
+        // Toutes les matières (référence immuable)
+        const toutesLesMatieres = data.matieres;
 
-        // Filtrer les matières selon la classe sélectionnée (pour les profs)
+        // Reconstruire le select matière avec uniquement les options valides
         function filtrerMatieres() {
-            if (!combinaisons) return; // admin voit tout
+            matiereSelect.innerHTML = '<option value="">-- Matière --</option>';
+            if (!combinaisons) {
+                // admin : toutes les matières
+                toutesLesMatieres.forEach(m => {
+                    const o = document.createElement('option');
+                    o.value = m.id; o.textContent = m.nom;
+                    matiereSelect.appendChild(o);
+                });
+                return;
+            }
             const idClasse = parseInt(classeSelect.value);
-            const matieresAutorisees = combinaisons
+            if (!idClasse) return; // aucune classe sélectionnée : select vide
+            const idsAutorises = combinaisons
                 .filter(c => c.id_classe === idClasse)
                 .map(c => c.id_matiere);
-            Array.from(matiereSelect.options).forEach(o => {
-                if (o.value === '') return;
-                o.hidden = !matieresAutorisees.includes(parseInt(o.value));
-            });
-            matiereSelect.value = '';
+            toutesLesMatieres
+                .filter(m => idsAutorises.includes(m.id))
+                .forEach(m => {
+                    const o = document.createElement('option');
+                    o.value = m.id; o.textContent = m.nom;
+                    matiereSelect.appendChild(o);
+                });
         }
 
         classeSelect.addEventListener('change', filtrerMatieres);
+        filtrerMatieres(); // état initial
 
         // Définir la date d'aujourd'hui par défaut
         document.getElementById('prof-date').valueAsDate = new Date();
@@ -548,7 +539,8 @@
             const rEvals = await fetch(`/api/notes/evaluations?classe_id=${idClasse}&matiere_id=${idMatiere}`);
             if (rEvals.ok) renderEvalsExistantes(await rEvals.json(), evalsEl, idClasse, idMatiere);
         } else {
-            showFeedback('Erreur lors de l\'enregistrement', 'error');
+            const errData = await r.json().catch(() => ({}));
+            showFeedback(errData.error || `Erreur ${r.status}`, 'error');
         }
     }
 

@@ -681,24 +681,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultatMenu = document.getElementById('resultats-menu');
         let hoverTimeout = null;
         
-        // Détecter automatiquement la page actuelle en fonction du nom du fichier
+        // Détecter automatiquement la page actuelle en fonction du pathname
         function detectCurrentPage() {
-            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
-            
-            // Mapping entre fichiers et data-tab
             const pageMap = {
                 '/': 'accueil',
                 '/edt': 'edt',
-                '/resultats': 'resultats',
-                '/notes': 'resultats',
-                '/releve': 'resultats',
-                '/bulletin': 'resultats',
+                '/notes': 'notes',
                 '/travail': 'cahier-textes',
-                '/assiduity': 'cartne-correspondance',
-                '/communication': 'communication'
             };
-            
-            return pageMap[currentFile] || 'accueil';
+            return pageMap[window.location.pathname] || 'accueil';
         }
         
         let activePage = detectCurrentPage();
