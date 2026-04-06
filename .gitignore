@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 *.pyo
+.coverage
+htmlcov/
 
 # system files
 .DS_Store

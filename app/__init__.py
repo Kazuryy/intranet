@@ -100,6 +100,3 @@ def create_app(config=None):
     app.register_blueprint(devoirs_bp)
 
     return app
-
-
-

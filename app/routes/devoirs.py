@@ -1,65 +1,43 @@
 from flask import Blueprint, request, jsonify
-from ..models import db, User, Prof, Matiere, Classe, Eleve, Devoir, Cours, Direction
-from ..models import SessionAuth as DBSession
+from flask_login import login_required, current_user
 from datetime import date, datetime
 import bleach
+
+from ..models import db, Prof, Matiere, Classe, Eleve, Devoir, Cours
 
 
 def sanitize(text):
     return bleach.clean(text, tags=[], strip=True)
 
 
-ROLES_LECTURE  = ['eleve', 'prof', 'direction', 'cpe', 'parent', 'administrateur']
-ROLES_ECRITURE = ['prof']
-
 TYPES_VALIDES = ['exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre']
 
-
-# ─── Auth ─────────────────────────────────────────────────────────────────────
-
-_NORM = {'élève': 'eleve', 'employé': 'employe'}
-
-def get_user_from_suid(suid):
-    session = DBSession.query.filter(
-        DBSession.suid == suid,
-        DBSession.expire_le > datetime.now()
-    ).first()
-    if not session:
-        return None
-
-    user = db.session.get(User, session.id_user)
-    if not user:
-        return None
-
-    role = _NORM.get(user.type, user.type)
-    result = {'ID': user.id, 'role': role, 'ID_Prof': None}
-
-    if role in ('employe', 'prof'):
-        prof = Prof.query.filter_by(id_user=user.id).first()
-        if prof:
-            result['role']    = 'prof'
-            result['ID_Prof'] = prof.id
-        else:
-            direction = Direction.query.filter_by(id_user=user.id).first()
-            if direction:
-                result['role'] = 'direction'
-
-    return result
-
-def verif_role(suid, roles_autorises):
-    if not suid:
-        return None, (jsonify({'error': 'SUID manquant'}), 401)
-    user = get_user_from_suid(suid)
-    if not user:
-        return None, (jsonify({'error': 'Session invalide ou expiree'}), 401)
-    if user['role'] not in roles_autorises:
-        return None, (jsonify({'error': 'Acces non autorise'}), 403)
-    return user, None
-
-
-# ─── Blueprint ────────────────────────────────────────────────────────────────
-
 devoirs_bp = Blueprint('devoirs', __name__, url_prefix='/api/devoirs')
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def _get_prof():
+    if current_user.type != 'employé':
+        return None
+    return Prof.query.filter_by(id_user=current_user.id).first()
+
+
+def _require_prof():
+    """Retourne (prof, None) ou (None, réponse 403)."""
+    prof = _get_prof()
+    if not prof:
+        return None, (jsonify({'error': 'Acces reserve aux professeurs'}), 403)
+    return prof, None
+
+
+def _prof_enseigne(prof, id_classe, id_matiere):
+    """Vérifie qu'un Cours lie ce prof à cette classe et matière."""
+    return (
+        db.session.query(Cours)
+        .filter_by(id_prof=prof.id, id_classe=id_classe, id_matiere=id_matiere)
+        .first() is not None
+    )
 
 
 def _serialize(d, m, c):
@@ -67,56 +45,69 @@ def _serialize(d, m, c):
     if isinstance(dl, datetime):
         dl = dl.date()
     return {
-        'ID':          d.id,
-        'Type':        d.type,
-        'Date_Limite': str(dl),
-        'Consigne':    d.consigne,
-        'Matiere':     m.nom,
-        'Niveau':      c.niveau,
-        'Suffixe':     c.suffixe,
+        'id':          d.id,
+        'type':        d.type,
+        'date_limite': str(dl),
+        'consigne':    d.consigne,
+        'matiere':     m.nom,
+        'niveau':      c.niveau,
+        'suffixe':     c.suffixe,
     }
+
+
+def _parse_date(value):
+    if isinstance(value, str):
+        return datetime.combine(
+            datetime.strptime(value, '%Y-%m-%d').date(),
+            datetime.min.time()
+        )
+    return value
 
 
 # ─── Lecture ──────────────────────────────────────────────────────────────────
 
 @devoirs_bp.route('/', methods=['GET'])
+@login_required
 def get_devoirs():
-    suid = request.args.get('suid')
-    user, err = verif_role(suid, ROLES_LECTURE)
-    if err:
-        return err
+    q = (
+        db.session.query(Devoir, Matiere, Classe)
+        .join(Matiere, Devoir.id_matiere == Matiere.id)
+        .join(Classe, Devoir.id_classe == Classe.id)
+    )
 
-    q = (db.session.query(Devoir, Matiere, Classe)
-         .join(Matiere, Devoir.id_matiere == Matiere.id)
-         .join(Classe,  Devoir.id_classe  == Classe.id))
-
-    if user['role'] == 'prof':
-        q = q.filter(Devoir.id_prof == user['ID_Prof'])
-    elif user['role'] == 'eleve':
-        q = (q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
-              .filter(Eleve.id_user == user['ID']))
+    if current_user.type == 'employé':
+        prof = _get_prof()
+        if prof:
+            q = q.filter(Devoir.id_prof == prof.id)
+    elif current_user.type == 'élève':
+        q = (
+            q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
+            .filter(Eleve.id_user == current_user.id)
+        )
 
     rows = q.order_by(Devoir.date_limite.desc()).all()
     return jsonify([_serialize(d, m, c) for d, m, c in rows]), 200
 
 
 @devoirs_bp.route('/<int:id_devoir>', methods=['GET'])
+@login_required
 def get_devoir(id_devoir):
-    suid = request.args.get('suid')
-    user, err = verif_role(suid, ROLES_LECTURE)
-    if err:
-        return err
+    q = (
+        db.session.query(Devoir, Matiere, Classe)
+        .join(Matiere, Devoir.id_matiere == Matiere.id)
+        .join(Classe, Devoir.id_classe == Classe.id)
+        .filter(Devoir.id == id_devoir)
+    )
 
-    q = (db.session.query(Devoir, Matiere, Classe)
-         .join(Matiere, Devoir.id_matiere == Matiere.id)
-         .join(Classe,  Devoir.id_classe  == Classe.id)
-         .filter(Devoir.id == id_devoir))
-
-    if user['role'] == 'prof':
-        q = q.filter(Devoir.id_prof == user['ID_Prof'])
-    elif user['role'] == 'eleve':
-        q = (q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
-              .filter(Eleve.id_user == user['ID']))
+    if current_user.type == 'employé':
+        prof = _get_prof()
+        if prof:
+            q = q.filter(Devoir.id_prof == prof.id)
+    elif current_user.type == 'élève':
+        q = (
+            q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
+            .filter(Eleve.id_user == current_user.id)
+        )
 
     row = q.first()
     if not row:
@@ -126,24 +117,26 @@ def get_devoir(id_devoir):
 
 
 @devoirs_bp.route('/tri/a_venir', methods=['GET'])
+@login_required
 def get_devoirs_a_venir():
-    suid = request.args.get('suid')
-    user, err = verif_role(suid, ROLES_LECTURE)
-    if err:
-        return err
-
     aujourd_hui = datetime.combine(date.today(), datetime.min.time())
 
-    q = (db.session.query(Devoir, Matiere, Classe)
-         .join(Matiere, Devoir.id_matiere == Matiere.id)
-         .join(Classe,  Devoir.id_classe  == Classe.id)
-         .filter(Devoir.date_limite > aujourd_hui))
+    q = (
+        db.session.query(Devoir, Matiere, Classe)
+        .join(Matiere, Devoir.id_matiere == Matiere.id)
+        .join(Classe, Devoir.id_classe == Classe.id)
+        .filter(Devoir.date_limite > aujourd_hui)
+    )
 
-    if user['role'] == 'prof':
-        q = q.filter(Devoir.id_prof == user['ID_Prof'])
-    elif user['role'] == 'eleve':
-        q = (q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
-              .filter(Eleve.id_user == user['ID']))
+    if current_user.type == 'employé':
+        prof = _get_prof()
+        if prof:
+            q = q.filter(Devoir.id_prof == prof.id)
+    elif current_user.type == 'élève':
+        q = (
+            q.join(Eleve, Eleve.id_classe == Devoir.id_classe)
+            .filter(Eleve.id_user == current_user.id)
+        )
 
     rows = q.order_by(Devoir.date_limite.asc()).all()
     return jsonify([_serialize(d, m, c) for d, m, c in rows]), 200
@@ -152,33 +145,44 @@ def get_devoirs_a_venir():
 # ─── Écriture ─────────────────────────────────────────────────────────────────
 
 @devoirs_bp.route('/creer', methods=['POST'])
+@login_required
 def create_devoir():
-    data = request.get_json() or {}
-    user, err = verif_role(data.get('suid'), ROLES_ECRITURE)
+    prof, err = _require_prof()
     if err:
         return err
 
+    data = request.get_json(silent=True) or {}
+
     for field in ['id_classe', 'id_matiere', 'type', 'date_limite', 'consigne']:
         if field not in data:
-            return jsonify({'error': f'Champ manquant : {field}', 'consigne': 'requis'}), 400
+            return jsonify(
+                {'error': f'Champ manquant : {field}', 'consigne': 'requis'}
+            ), 400
 
     if data['type'] not in TYPES_VALIDES:
-        return jsonify({'error': f"Type invalide. Valeurs acceptees : {TYPES_VALIDES}"}), 400
+        return jsonify(
+            {'error': f"Type invalide. Valeurs acceptees : {TYPES_VALIDES}"}
+        ), 400
 
-    consigne = sanitize(data['consigne'])
-    type_    = sanitize(data['type'])
+    id_classe = data['id_classe']
+    id_matiere = data['id_matiere']
+    if not _prof_enseigne(prof, id_classe, id_matiere):
+        return jsonify(
+            {'error': 'Le prof n\'enseigne pas cette matiere dans cette classe'}
+        ), 403
 
-    dl = data['date_limite']
-    if isinstance(dl, str):
-        dl = datetime.combine(datetime.strptime(dl, '%Y-%m-%d').date(), datetime.min.time())
+    try:
+        dl = _parse_date(data['date_limite'])
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Format date invalide (YYYY-MM-DD attendu)'}), 400
 
     d = Devoir(
-        id_classe=data['id_classe'],
-        id_matiere=data['id_matiere'],
-        id_prof=user['ID_Prof'],
-        type=type_,
+        id_classe=id_classe,
+        id_matiere=id_matiere,
+        id_prof=prof.id,
+        type=sanitize(data['type']),
         date_limite=dl,
-        consigne=consigne,
+        consigne=sanitize(data['consigne']),
     )
     db.session.add(d)
     db.session.commit()
@@ -186,16 +190,17 @@ def create_devoir():
 
 
 @devoirs_bp.route('/modifier/<int:id_devoir>', methods=['PUT'])
+@login_required
 def update_devoir(id_devoir):
-    data = request.get_json() or {}
-    user, err = verif_role(data.get('suid'), ROLES_ECRITURE)
+    prof, err = _require_prof()
     if err:
         return err
 
-    d = Devoir.query.filter_by(id=id_devoir, id_prof=user['ID_Prof']).first()
+    d = Devoir.query.filter_by(id=id_devoir, id_prof=prof.id).first()
     if not d:
         return jsonify({'error': 'Devoir introuvable ou acces refuse'}), 403
 
+    data = request.get_json(silent=True) or {}
     champs = ['id_classe', 'id_matiere', 'type', 'date_limite', 'consigne']
     updates = {k: data[k] for k in champs if k in data}
     if not updates:
@@ -204,6 +209,13 @@ def update_devoir(id_devoir):
     for k, v in updates.items():
         if k in ('consigne', 'type'):
             v = sanitize(v)
+        elif k == 'date_limite':
+            try:
+                v = _parse_date(v)
+            except (ValueError, TypeError):
+                return jsonify(
+                    {'error': 'Format date invalide (YYYY-MM-DD attendu)'}
+                ), 400
         setattr(d, k, v)
 
     db.session.commit()
@@ -211,15 +223,13 @@ def update_devoir(id_devoir):
 
 
 @devoirs_bp.route('/supprimer/<int:id_devoir>', methods=['DELETE'])
+@login_required
 def delete_devoir(id_devoir):
-    # suid accepté en JSON body OU en query param
-    data = request.get_json(silent=True) or {}
-    suid = data.get('suid') or request.args.get('suid')
-    user, err = verif_role(suid, ROLES_ECRITURE)
+    prof, err = _require_prof()
     if err:
         return err
 
-    d = Devoir.query.filter_by(id=id_devoir, id_prof=user['ID_Prof']).first()
+    d = Devoir.query.filter_by(id=id_devoir, id_prof=prof.id).first()
     if not d:
         return jsonify({'error': 'Devoir introuvable ou acces refuse'}), 403
 
@@ -231,28 +241,31 @@ def delete_devoir(id_devoir):
 # ─── Formulaires ──────────────────────────────────────────────────────────────
 
 @devoirs_bp.route('/tri/classes', methods=['GET'])
+@login_required
 def get_classes_prof():
-    suid = request.args.get('suid')
-    user, err = verif_role(suid, ROLES_ECRITURE)
+    prof, err = _require_prof()
     if err:
         return err
 
-    classes = (db.session.query(Classe)
-               .join(Cours, Cours.id_classe == Classe.id)
-               .filter(Cours.id_prof == user['ID_Prof'])
-               .distinct().all())
-    return jsonify([{'ID': c.id, 'Niveau': c.niveau, 'Suffixe': c.suffixe}
-                    for c in classes]), 200
+    classes = (
+        db.session.query(Classe)
+        .join(Cours, Cours.id_classe == Classe.id)
+        .filter(Cours.id_prof == prof.id)
+        .distinct()
+        .all()
+    )
+    return jsonify(
+        [{'id': c.id, 'niveau': c.niveau, 'suffixe': c.suffixe} for c in classes]
+    ), 200
 
 
 @devoirs_bp.route('/tri/matieres', methods=['GET'])
+@login_required
 def get_matieres_prof():
-    suid = request.args.get('suid')
-    user, err = verif_role(suid, ROLES_ECRITURE)
+    prof, err = _require_prof()
     if err:
         return err
 
-    prof = db.session.get(Prof, user['ID_Prof'])
-    if not prof:
-        return jsonify([]), 200
-    return jsonify([{'ID': m.id, 'Nom': m.nom} for m in prof.matieres]), 200
+    return jsonify(
+        [{'id': m.id, 'nom': m.nom} for m in prof.matieres]
+    ), 200

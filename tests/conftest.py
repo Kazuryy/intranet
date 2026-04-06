@@ -1,8 +1,7 @@
-import uuid
 import pytest
 from datetime import datetime, date, timedelta
 from app import bcrypt, create_app
-from app.models import Direction, User, SessionAuth
+from app.models import Direction, User
 from app.models import db
 
 
@@ -40,7 +39,7 @@ def user(app):
 def direction(app):
     with app.app_context():
         dir_user = User(
-            type='employe', nom='Direction', prenom='Admin',
+            type='employé', nom='Direction', prenom='Admin',
             username='direction',
             mail_interne='admin.direction@guardiaschool.fr',
             password=bcrypt.generate_password_hash('dirpassword').decode('utf-8')
@@ -53,30 +52,11 @@ def direction(app):
         yield d
 
 
-##################################################################################################################
-# PARTIE TEST DEVOIRS - fixtures spécifiques à ces tests
-##################################################################################################################
-
-# ── Helper SUID ───────────────────────────────────────────────────────────────
-
-def _creer_suid(app, user_id):
-    from app.models import db, SessionAuth   # ← SessionAuth, pas db as DBSession
-    suid = str(uuid.uuid4())
-    with app.app_context():
-        db.session.add(SessionAuth(
-            suid=suid,
-            id_user=user_id,
-            expire_le=datetime.now() + timedelta(days=1)
-        ))
-        db.session.commit()
-    return suid
-
-
 # ── Fixtures devoirs ──────────────────────────────────────────────────────────
 
 @pytest.fixture
-def prof_suid(app):
-    from app.models import db, User, Matiere, Prof
+def prof_devoirs(app):
+    from app.models import Matiere, Prof
     with app.app_context():
         matiere = Matiere(nom='Mathematiques')
         db.session.add(matiere)
@@ -84,6 +64,7 @@ def prof_suid(app):
         u = User(
             type='employé', nom='Dupont', prenom='Paul',
             username='prof_dupont',
+            mail_interne='paul.dupont@guardiaschool.fr',
             password=bcrypt.generate_password_hash('password123').decode('utf-8')
         )
         db.session.add(u)
@@ -92,22 +73,12 @@ def prof_suid(app):
         p.matieres.append(matiere)
         db.session.add(p)
         db.session.commit()
-        suid = _creer_suid(app, u.id)
-        yield suid
-        from app.models import SessionAuth
-        db.session.query(SessionAuth).filter_by(suid=suid).delete()
-        p_obj = db.session.get(Prof, p.id)
-        if p_obj:
-            p_obj.matieres.clear()
-            db.session.delete(p_obj)
-        db.session.query(User).filter_by(id=u.id).delete()
-        db.session.query(Matiere).filter_by(id=matiere.id).delete()
-        db.session.commit()
+        yield {'mail': u.mail_interne, 'prof_id': p.id, 'matiere_id': matiere.id}
 
 
 @pytest.fixture
-def eleve_suid(app):
-    from app.models import db, User, Classe, Eleve
+def eleve_devoirs(app):
+    from app.models import Classe, Eleve
     with app.app_context():
         classe = Classe(niveau=1, suffixe='A', annee=2026)
         db.session.add(classe)
@@ -115,52 +86,38 @@ def eleve_suid(app):
         u = User(
             type='élève', nom='Martin', prenom='Lea',
             username='eleve_martin',
+            mail_interne='lea.martin@guardiaschool.fr',
             password=bcrypt.generate_password_hash('password123').decode('utf-8')
         )
         db.session.add(u)
         db.session.flush()
         db.session.add(Eleve(id_user=u.id, id_classe=classe.id))
         db.session.commit()
-        suid = _creer_suid(app, u.id)
-        yield suid
-        from app.models import SessionAuth
-        db.session.query(SessionAuth).filter_by(suid=suid).delete()
-        db.session.query(Eleve).filter_by(id_user=u.id).delete()
-        db.session.query(User).filter_by(id=u.id).delete()
-        db.session.query(Classe).filter_by(id=classe.id).delete()
-        db.session.commit()
+        yield {'mail': u.mail_interne, 'classe_id': classe.id}
 
 
 @pytest.fixture
-def admin_suid(app):
-    from app.models import db, User
+def admin_devoirs(app):
     with app.app_context():
         u = User(
-            type='administrateur',   # ← était 'employé'
-            nom='Admin', prenom='Sys',
+            type='administrateur', nom='Admin', prenom='Sys',
             username='admin_sys',
+            mail_interne='sys.admin@guardiaschool.fr',
             password=bcrypt.generate_password_hash('password123').decode('utf-8')
         )
         db.session.add(u)
         db.session.commit()
-        suid = _creer_suid(app, u.id)
-        yield suid
-        from app.models import SessionAuth
-        db.session.query(SessionAuth).filter_by(suid=suid).delete()
-        db.session.query(User).filter_by(id=u.id).delete()
-        db.session.commit()
+        yield {'mail': u.mail_interne}
 
 
 @pytest.fixture
-def devoirs(app, prof_suid, eleve_suid):
-    """5 devoirs : 2 passes, 3 futurs. Cree aussi le Cours prof<->classe."""
-    from app.models import db, Devoir, Classe, Matiere, Prof, Cours
-    today = date.today()
+def cours_devoirs(app, prof_devoirs, eleve_devoirs):
+    """Cours liant le prof à la classe de l'élève — requis pour créer des devoirs."""
+    from app.models import Classe, Matiere, Prof, Cours
     with app.app_context():
-        classe  = Classe.query.filter_by(niveau=1, suffixe='A', annee=2026).first()
+        classe = Classe.query.filter_by(niveau=1, suffixe='A', annee=2026).first()
         matiere = Matiere.query.filter_by(nom='Mathematiques').first()
         prof = Prof.query.filter(Prof.matieres.any(id=matiere.id)).first()
-
         cours = Cours(
             id_matiere=matiere.id,
             id_prof=prof.id,
@@ -170,7 +127,21 @@ def devoirs(app, prof_suid, eleve_suid):
             etat='planifie'
         )
         db.session.add(cours)
-        db.session.flush()
+        db.session.commit()
+        yield {'cours_id': cours.id, 'classe_id': classe.id, 'matiere_id': matiere.id}
+        db.session.query(Cours).filter_by(id=cours.id).delete()
+        db.session.commit()
+
+
+@pytest.fixture
+def devoirs(app, cours_devoirs, prof_devoirs, eleve_devoirs):
+    """5 devoirs : 2 passes, 3 futurs."""
+    from app.models import Devoir, Classe, Matiere, Prof
+    today = date.today()
+    with app.app_context():
+        classe = Classe.query.filter_by(niveau=1, suffixe='A', annee=2026).first()
+        matiere = Matiere.query.filter_by(nom='Mathematiques').first()
+        prof = Prof.query.filter(Prof.matieres.any(id=matiere.id)).first()
 
         specs = [
             ('exercice', -10, 'Passe 1 - exercices chapitre 3'),
@@ -198,5 +169,4 @@ def devoirs(app, prof_suid, eleve_suid):
 
         for d in created:
             db.session.query(Devoir).filter_by(id=d.id).delete()
-        db.session.query(Cours).filter_by(id=cours.id).delete()
         db.session.commit()

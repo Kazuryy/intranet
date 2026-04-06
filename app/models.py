@@ -222,7 +222,8 @@ class Devoir(db.Model):
     id_matiere = db.Column(
         db.Integer, db.ForeignKey('matiere.id', ondelete='RESTRICT'), nullable=False
     )
-    type = db.Column(db.Enum('exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre'),
+    type = db.Column(
+        db.Enum('exercice', 'controle', 'expose', 'projet', 'soutenance', 'autre'),
         nullable=False
     )
     date_limite = db.Column(db.DateTime, nullable=False)
