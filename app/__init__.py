@@ -89,4 +89,7 @@ def create_app(config=None):
 
     from .edt import edt_bp
     app.register_blueprint(edt_bp, url_prefix='/edt')
+
+    from .notes import notes_bp
+    app.register_blueprint(notes_bp)
     return app
