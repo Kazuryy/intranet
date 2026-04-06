@@ -84,6 +84,12 @@ jobs:
       - name: run tests
         run: pytest tests/ --cov=app --cov-report=term --cov-report=xml
 
+      - name: upload coverage report
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: coverage-report
+          path: coverage.xml
+
   pip-audit:
     name: Pip Audit Scan
     needs: changes
@@ -170,6 +176,24 @@ jobs:
       - name: stop app
         if: always()
         run: docker compose -f docker-compose.yml down
+
+  sonar:
+    name: SonarCloud Scan
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+      - name: Run SonarCloud
+        uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8 # v5.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   ci-status:
     name: CI
