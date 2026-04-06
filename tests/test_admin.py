@@ -407,3 +407,281 @@ def test_direction_cannot_delete_admin(client, direction_user, admin):
     })
     response = client.delete(f'/admin/users/{admin.id}')
     assert response.status_code == 403
+
+
+@pytest.fixture
+def employe_non_dir(app):
+    with app.app_context():
+        u = User(
+            type='employé', nom='Cantine', prenom='Agent',
+            username='cantine_admin',
+            mail_interne='cantine.admin@guardiaschool.fr',
+            password=bcrypt.generate_password_hash('cantinepass').decode('utf-8')
+        )
+        db.session.add(u)
+        db.session.commit()
+        yield u
+
+
+@pytest.fixture
+def employe_user(app):
+    with app.app_context():
+        u = User(
+            type='employé', nom='Prof', prenom='Jean',
+            username='jprof_admin',
+            mail_interne='jean.prof.admin@guardiaschool.fr',
+            password=bcrypt.generate_password_hash('profpass').decode('utf-8')
+        )
+        db.session.add(u)
+        db.session.commit()
+        yield u
+
+
+def test_list_users_non_direction_forbidden(client, admin, employe_non_dir):
+    # employé non-direction => 403
+    client.post('/auth/login', json={
+        'email': 'cantine.admin@guardiaschool.fr', 'password': 'cantinepass'
+    })
+    response = client.get('/admin/users')
+    assert response.status_code == 403
+
+
+def test_create_user_no_json(client, admin):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post(
+        '/admin/users', data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_update_user_no_json(client, admin, eleve):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(
+        f'/admin/users/{eleve.id}',
+        data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_update_user_empty_prenom(client, admin, eleve):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={'prenom': '  '})
+    assert response.status_code == 400
+
+
+def test_update_user_type_change(client, admin, eleve):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/users/{eleve.id}', json={'type': 'parent'})
+    assert response.status_code == 200
+    assert response.get_json()['type'] == 'parent'
+
+
+def test_update_user_is_active_not_bool(client, admin, eleve):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(
+        f'/admin/users/{eleve.id}', json={'is_active': 'oui'}
+    )
+    assert response.status_code == 400
+
+
+# --- /admin/users/<id>/set-prof ---
+
+def test_set_prof_success(client, admin, employe_user):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post(f'/admin/users/{employe_user.id}/set-prof')
+    assert response.status_code == 201
+    assert 'id_prof' in response.get_json()
+
+
+def test_set_prof_already_prof(client, admin, employe_user):
+    # deux fois => 200 la deuxième fois (idempotent)
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    client.post(f'/admin/users/{employe_user.id}/set-prof')
+    response = client.post(f'/admin/users/{employe_user.id}/set-prof')
+    assert response.status_code == 200
+
+
+def test_set_prof_not_employe(client, admin, eleve):
+    # user n'est pas employé => 400
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post(f'/admin/users/{eleve.id}/set-prof')
+    assert response.status_code == 400
+
+
+def test_set_prof_not_found(client, admin):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post('/admin/users/9999/set-prof')
+    assert response.status_code == 404
+
+
+def test_unset_prof_success(client, admin, employe_user):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    client.post(f'/admin/users/{employe_user.id}/set-prof')
+    response = client.delete(f'/admin/users/{employe_user.id}/set-prof')
+    assert response.status_code == 200
+
+
+def test_unset_prof_not_prof(client, admin, employe_user):
+    # user n'est pas prof => 404
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.delete(f'/admin/users/{employe_user.id}/set-prof')
+    assert response.status_code == 404
+
+
+def test_prof_status(client, admin, employe_user):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    client.post(f'/admin/users/{employe_user.id}/set-prof')
+    response = client.get(f'/admin/users/{employe_user.id}/prof-status')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['is_prof'] is True
+
+
+def test_prof_status_not_prof(client, admin, employe_user):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.get(f'/admin/users/{employe_user.id}/prof-status')
+    assert response.status_code == 200
+    assert response.get_json()['is_prof'] is False
+
+
+def test_set_prof_matieres_success(client, admin, employe_user, app):
+    from app.models import Matiere
+    with app.app_context():
+        m = Matiere(nom='Histoire')
+        db.session.add(m)
+        db.session.commit()
+        matiere_id = m.id
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    client.post(f'/admin/users/{employe_user.id}/set-prof')
+    response = client.post(
+        f'/admin/users/{employe_user.id}/prof-matieres',
+        json={'matiere_ids': [matiere_id]}
+    )
+    assert response.status_code == 200
+    assert len(response.get_json()['matieres']) == 1
+
+
+def test_set_prof_matieres_not_prof(client, admin, employe_user):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post(
+        f'/admin/users/{employe_user.id}/prof-matieres',
+        json={'matiere_ids': []}
+    )
+    assert response.status_code == 404
+
+
+def test_set_prof_matieres_invalid_list(client, admin, employe_user):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    client.post(f'/admin/users/{employe_user.id}/set-prof')
+    response = client.post(
+        f'/admin/users/{employe_user.id}/prof-matieres',
+        json={'matiere_ids': 'pas-une-liste'}
+    )
+    assert response.status_code == 400
+
+
+# --- Classes avec prof_principal ---
+
+def test_create_classe_with_prof(client, admin, employe_user, app):
+    # crée une classe avec prof_principal => _classe_to_dict avec prof
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    client.post(f'/admin/users/{employe_user.id}/set-prof')
+    from app.models import Prof
+    with app.app_context():
+        prof = Prof.query.filter_by(id_user=employe_user.id).first()
+        prof_id = prof.id
+    response = client.post('/admin/classes', json={
+        'niveau': 3, 'annee': 2026, 'id_prof_principal': prof_id
+    })
+    assert response.status_code == 201
+    assert response.get_json()['prof_principal'] is not None
+
+
+def test_create_classe_no_json(client, admin):
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.post(
+        '/admin/classes', data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_update_classe_no_json(client, admin, app):
+    from app.models import Classe
+    with app.app_context():
+        c = Classe(niveau=1, suffixe='Z', annee=2026)
+        db.session.add(c)
+        db.session.commit()
+        cid = c.id
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(
+        f'/admin/classes/{cid}', data='notjson', content_type='text/plain'
+    )
+    assert response.status_code == 400
+
+
+def test_update_classe_invalid_niveau(client, admin, app):
+    from app.models import Classe
+    with app.app_context():
+        c = Classe(niveau=1, suffixe='Z', annee=2026)
+        db.session.add(c)
+        db.session.commit()
+        cid = c.id
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(f'/admin/classes/{cid}', json={'niveau': 'abc'})
+    assert response.status_code == 400
+
+
+def test_update_classe_prof_not_found(client, admin, app):
+    from app.models import Classe
+    with app.app_context():
+        c = Classe(niveau=1, suffixe='Z', annee=2026)
+        db.session.add(c)
+        db.session.commit()
+        cid = c.id
+    client.post('/auth/login', json={
+        'email': 'test.admin@guardiaschool.fr', 'password': 'adminpass'
+    })
+    response = client.patch(
+        f'/admin/classes/{cid}', json={'id_prof_principal': 9999}
+    )
+    assert response.status_code == 404
