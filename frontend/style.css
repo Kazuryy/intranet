@@ -1,0 +1,132 @@
+.Container-Haut {
+    height: 15vh;
+    background-color: red;
+    display: flex;
+    flex-direction: column;
+}
+
+.Header-Supérieur {
+    height: 9vh;
+    background-color: pink;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Header-Supérieur h1 {
+    margin: 0;
+    font-size: 2em;
+    color: black;
+}
+
+.Header-Inférieur {
+    height: 6vh;
+    background-color: purple;
+    display: flex;
+    align-items: center;
+    padding-left: 1%;
+}
+.Header-Inférieur h1 {
+    margin: 0;
+    font-size: 1em;
+    color: white;
+}
+
+.Container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 95vh;
+    background-color: Blue;
+    padding:1%;
+    gap: 1.5rem;
+}
+
+.Container-EDT {
+    width: 80%;
+    height: 45%;
+    background-color: cyan;
+    display: flex;
+    align-items: center;
+    padding: 1%;
+    gap: 1%;
+}
+
+.Flex-Container-EDT {
+    flex:1;
+    height: 100%;
+    background-color: rgb(78, 235, 72);
+}
+
+.Container-Bas {
+    width: 95%;
+    height: 55%;
+    background-color: green;
+    display: flex;
+    flex-direction: row;
+    gap:1%;
+}
+
+.Flex-Container-Bas {
+    flex:1;
+    height: 100%;
+}
+
+.Container-Bas-Gauche {
+    background-color: yellow;
+    display: flex;
+    flex-direction: row;
+    gap:1%;
+}
+
+.Container-Notes {
+    flex:3;
+    background-color: gray;
+}
+.Container-Devoirs {
+    flex:5;
+    background-color: white;
+}
+
+.Container-Bas-Milieu {
+    background-color: orange;
+    display: flex;
+    flex-direction: column;
+    gap:1%;
+}
+.Container-Map {
+    flex:3;
+    background-color: rgb(83, 68, 39);
+}
+.Container-Mail {
+    flex:5;
+    background-color: rgb(140, 125, 223);
+}
+
+.Container-Bas-Droite {
+    background-color: brown;
+    display: flex;
+    flex-direction: column;
+    gap:1%;
+}
+
+.Container-Assiduite {
+    flex:3;
+    background-color: rgb(255, 255, 0);
+}
+.Container-Communication {
+    flex:5;
+    background-color: rgb(255, 0, 255);
+    display: flex;
+    flex-direction: column;
+    gap: 1%;
+    padding: 1%;
+}
+.Container-Message {
+    flex: 5;
+    background-color: rgb(65, 29, 29);
+}
+.Container-Menu {
+    flex:3;
+    background-color: rgb(29, 65, 29);
+}

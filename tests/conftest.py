@@ -5,7 +5,6 @@ from app import bcrypt, create_app
 from app.models import Direction, User, SessionAuth
 from app.models import db
 
-# ── App & client ──────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def app():
@@ -29,6 +28,7 @@ def user(app):
         u = User(
             type='administrateur', nom='Test', prenom='User',
             username='testuser',
+            mail_interne='user.test@guardiaschool.fr',
             password=bcrypt.generate_password_hash('password123').decode('utf-8')
         )
         db.session.add(u)
@@ -42,6 +42,7 @@ def direction(app):
         dir_user = User(
             type='employe', nom='Direction', prenom='Admin',
             username='direction',
+            mail_interne='admin.direction@guardiaschool.fr',
             password=bcrypt.generate_password_hash('dirpassword').decode('utf-8')
         )
         db.session.add(dir_user)

@@ -26,6 +26,8 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     mail_interne = db.Column(db.String(150), unique=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    setup_token = db.Column(db.String(100), unique=True, nullable=True)
+    setup_token_expires = db.Column(db.DateTime, nullable=True)
 
 
 class Information(db.Model):
@@ -65,6 +67,7 @@ class Prof(db.Model):
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
     )
     matieres = db.relationship('Matiere', secondary=prof_matiere, backref='profs')
+    user = db.relationship('User', foreign_keys=[id_user])
 
 
 class Classe(db.Model):
@@ -114,6 +117,7 @@ class Parent(db.Model):
     id_information = db.Column(
         db.Integer, db.ForeignKey('information.id', ondelete='SET NULL'), nullable=True
     )
+    eleve = db.relationship('Eleve', foreign_keys=[id_eleve])
 
 
 class Employe(db.Model):
@@ -194,13 +198,18 @@ class Cours(db.Model):
     )
     debut = db.Column(db.DateTime, nullable=False)
     fin = db.Column(db.DateTime, nullable=False)
-    etat = db.Column(db.Enum('planifie', 'en cours', 'termine', 'annule'),
+    etat = db.Column(
+        db.Enum('planifie', 'en cours', 'termine', 'annule'),
         nullable=False,
         default='planifie'
     )
     id_salle = db.Column(
         db.Integer, db.ForeignKey('salle.id', ondelete='SET NULL'), nullable=True
     )
+    matiere = db.relationship('Matiere', foreign_keys=[id_matiere])
+    prof = db.relationship('Prof', foreign_keys=[id_prof])
+    classe = db.relationship('Classe', foreign_keys=[id_classe])
+    salle = db.relationship('Salle', foreign_keys=[id_salle])
 
 
 class Devoir(db.Model):
@@ -299,6 +308,17 @@ class Assiduite(db.Model):
         db.Enum('absent', 'retard', 'présent', 'excusé'), nullable=False
     )
     date = db.Column(db.DateTime, nullable=False)
+
+
+class SessionAuth(db.Model):
+    __tablename__ = 'session'
+
+    id = db.Column(db.Integer, primary_key=True)
+    suid = db.Column(db.String(36), unique=True, nullable=False)
+    id_user = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False
+    )
+    expire_le = db.Column(db.DateTime, nullable=False)
 
 
 class Log(db.Model):
