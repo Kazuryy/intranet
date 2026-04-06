@@ -245,7 +245,10 @@ def get_classes_prof():
         classes = Classe.query.all()
         matieres = Matiere.query.all()
         return jsonify({
-            'classes': [{'id': c.id, 'nom': f"{c.niveau}{c.suffixe} ({c.annee})"} for c in classes],
+            'classes': [
+                {'id': c.id, 'nom': f"{c.niveau}{c.suffixe} ({c.annee})"}
+                for c in classes
+            ],
             'matieres': [{'id': m.id, 'nom': m.nom} for m in matieres],
         })
 
@@ -269,7 +272,8 @@ def get_classes_prof():
     matieres_vues = {}
     combinaisons = []
     for classe, matiere in rows:
-        classes_vues[classe.id] = {'id': classe.id, 'nom': f"{classe.niveau}{classe.suffixe} ({classe.annee})"}
+        nom_classe = f"{classe.niveau}{classe.suffixe} ({classe.annee})"
+        classes_vues[classe.id] = {'id': classe.id, 'nom': nom_classe}
         matieres_vues[matiere.id] = {'id': matiere.id, 'nom': matiere.nom}
         combinaisons.append({'id_classe': classe.id, 'id_matiere': matiere.id})
 
@@ -331,7 +335,9 @@ def create_evaluations():
     date_str = data.get('date')
 
     if not all([id_classe, id_matiere, date_str, notes_list]):
-        return jsonify({'error': 'Champs manquants : id_classe, id_matiere, date, notes'}), 400
+        return jsonify(
+            {'error': 'Champs manquants : id_classe, id_matiere, date, notes'}
+        ), 400
 
     try:
         date = datetime.fromisoformat(date_str)
@@ -388,7 +394,8 @@ def update_evaluation(eval_id):
     if current_user.type == 'employé':
         prof = _get_prof()
         eleve = db.session.get(Eleve, ev.id_eleve)
-        if not prof or not eleve or not _prof_can_access(prof, eleve.id_classe, ev.id_matiere):
+        can_access = _prof_can_access(prof, eleve.id_classe, ev.id_matiere)
+        if not prof or not eleve or not can_access:
             return jsonify({'error': 'Acces interdit'}), 403
 
     data = request.get_json(silent=True) or {}
@@ -419,7 +426,8 @@ def delete_evaluation(eval_id):
     if current_user.type == 'employé':
         prof = _get_prof()
         eleve = db.session.get(Eleve, ev.id_eleve)
-        if not prof or not eleve or not _prof_can_access(prof, eleve.id_classe, ev.id_matiere):
+        can_access = _prof_can_access(prof, eleve.id_classe, ev.id_matiere)
+        if not prof or not eleve or not can_access:
             return jsonify({'error': 'Acces interdit'}), 403
 
     db.session.delete(ev)

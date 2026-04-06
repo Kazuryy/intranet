@@ -265,7 +265,11 @@ class TestGetClassesProf:
         data = r.get_json()
         assert any(c['id'] == seed_prof['classe_id'] for c in data['classes'])
         assert any(m['id'] == seed_prof['matiere_id'] for m in data['matieres'])
-        assert {'id_classe': seed_prof['classe_id'], 'id_matiere': seed_prof['matiere_id']} in data['combinaisons']
+        combo = {
+            'id_classe': seed_prof['classe_id'],
+            'id_matiere': seed_prof['matiere_id'],
+        }
+        assert combo in data['combinaisons']
 
     def test_admin_voit_tout(self, client, seed_prof):
         _login(client, seed_prof['admin_mail'])
@@ -279,7 +283,8 @@ class TestGetClassesProf:
 
 class TestGetElevesClasse:
     def test_non_authentifie_retourne_401(self, client, seed_prof):
-        assert client.get(f'/api/notes/eleves/{seed_prof["classe_id"]}').status_code == 401
+        url = f'/api/notes/eleves/{seed_prof["classe_id"]}'
+        assert client.get(url).status_code == 401
 
     def test_eleve_retourne_403(self, client, seed):
         _login(client, seed['eleve_mail'])
@@ -323,7 +328,8 @@ class TestCreateEvaluations:
 
     def test_eleve_retourne_403(self, client, seed, seed_prof):
         _login(client, seed['eleve_mail'])
-        assert client.post('/api/notes/evaluations', json=self._payload(seed_prof)).status_code == 403
+        r = client.post('/api/notes/evaluations', json=self._payload(seed_prof))
+        assert r.status_code == 403
 
     def test_prof_cree_evaluations(self, client, seed_prof):
         _login(client, seed_prof['prof_mail'])
@@ -338,7 +344,8 @@ class TestCreateEvaluations:
 
     def test_champs_manquants_retourne_400(self, client, seed_prof):
         _login(client, seed_prof['prof_mail'])
-        r = client.post('/api/notes/evaluations', json={'id_classe': seed_prof['classe_id']})
+        payload = {'id_classe': seed_prof['classe_id']}
+        r = client.post('/api/notes/evaluations', json=payload)
         assert r.status_code == 400
 
     def test_date_invalide_retourne_400(self, client, seed_prof):
@@ -391,7 +398,8 @@ class TestUpdateEvaluation:
             db.session.add(ev)
             db.session.commit()
             ev_id = ev.id
-        assert client.put(f'/api/notes/evaluations/{ev_id}', json={'note': 15}).status_code == 401
+        url = f'/api/notes/evaluations/{ev_id}'
+        assert client.put(url, json={'note': 15}).status_code == 401
 
     def test_prof_met_a_jour_la_note(self, client, seed_prof, app):
         with app.app_context():
@@ -409,7 +417,8 @@ class TestUpdateEvaluation:
 
     def test_evaluation_inexistante_retourne_404(self, client, seed_prof):
         _login(client, seed_prof['prof_mail'])
-        assert client.put('/api/notes/evaluations/9999', json={'note': 15}).status_code == 404
+        r = client.put('/api/notes/evaluations/9999', json={'note': 15})
+        assert r.status_code == 404
 
 
 # ─── DELETE /api/notes/evaluations/<id> ──────────────────────────────────────
