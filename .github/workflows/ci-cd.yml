@@ -153,7 +153,7 @@ jobs:
       - name: run scan
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
-          target: 'http://temp2.guardiaroot.fr'
+          target: 'https://temp2.guardiaroot.fr'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-I'
 
