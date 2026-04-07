@@ -305,6 +305,15 @@
                     </select>
                 </div>
 
+                <!-- Section classe (apparaît si type = élève) -->
+                <div id="create-classe-section" class="hidden mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="create-classe"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
+                </div>
+
                 <!-- Section prof (apparaît si type = employé) -->
                 <div id="create-prof-section" class="hidden mb-3 border border-indigo-100 rounded-xl p-3 bg-indigo-50/50">
                     <div class="flex items-center justify-between mb-2">
@@ -398,6 +407,15 @@
                         class="relative inline-flex w-10 h-5 rounded-full transition-colors focus:outline-none">
                         <span id="edit-active-thumb" class="inline-block w-4 h-4 bg-white rounded-full shadow absolute top-0.5 transition-transform"></span>
                     </button>
+                </div>
+
+                <!-- Section classe (élève uniquement) -->
+                <div id="edit-classe-section" class="hidden mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="edit-classe"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
                 </div>
 
                 <!-- Section prof (employé uniquement) -->
@@ -563,6 +581,7 @@
             document.getElementById('create-error').classList.add('hidden');
             document.getElementById('create-prof-section').classList.add('hidden');
             document.getElementById('create-matieres-section').classList.add('hidden');
+            document.getElementById('create-classe-section').classList.add('hidden');
             createIsProf = false;
             updateCreateProfToggle();
             document.getElementById('modal-create').classList.remove('hidden');
@@ -570,16 +589,25 @@
 
         document.getElementById('create-type').addEventListener('change', async (e) => {
             const profSection = document.getElementById('create-prof-section');
+            const classeSection = document.getElementById('create-classe-section');
             if (e.target.value === 'employé') {
                 profSection.classList.remove('hidden');
+                classeSection.classList.add('hidden');
                 if (allMatieres.length === 0) {
                     try {
                         const r = await fetch('/edt/matieres');
                         if (r.ok) allMatieres = await r.json();
                     } catch {}
                 }
+            } else if (e.target.value === 'élève') {
+                profSection.classList.add('hidden');
+                createIsProf = false;
+                updateCreateProfToggle();
+                classeSection.classList.remove('hidden');
+                await populateClasseSelect('create-classe');
             } else {
                 profSection.classList.add('hidden');
+                classeSection.classList.add('hidden');
                 createIsProf = false;
                 updateCreateProfToggle();
             }
@@ -624,6 +652,8 @@
             const nom = document.getElementById('create-nom').value.trim();
             const prenom = document.getElementById('create-prenom').value.trim();
             const type = document.getElementById('create-type').value;
+            const classeVal = document.getElementById('create-classe').value;
+            const id_classe = type === 'élève' && classeVal ? parseInt(classeVal) : null;
 
             const errEl = document.getElementById('create-error');
             const errMsg = document.getElementById('create-error-msg');
@@ -647,7 +677,7 @@
                 const res = await fetch('/admin/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nom, prenom, type })
+                    body: JSON.stringify({ nom, prenom, type, id_classe })
                 });
                 const data = await res.json();
 
@@ -707,6 +737,21 @@
 
         // ---- Modal modifier ----
         let allMatieres = [];
+        let allClasses = [];
+
+        async function populateClasseSelect(selectId, selectedId = null) {
+            if (allClasses.length === 0) {
+                try {
+                    const r = await fetch('/admin/classes');
+                    if (r.ok) allClasses = await r.json();
+                } catch {}
+            }
+            const sel = document.getElementById(selectId);
+            sel.innerHTML = '<option value="">-- Aucune --</option>' +
+                allClasses.map(c =>
+                    `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.niveau}${c.suffixe} (${c.annee})</option>`
+                ).join('');
+        }
 
         async function openEditModal(userId) {
             const user = users.find(u => u.id === userId);
@@ -723,11 +768,18 @@
             updateToggle();
 
             const profSection = document.getElementById('prof-section');
+            const classeSection = document.getElementById('edit-classe-section');
             if (user.type === 'employé') {
                 profSection.classList.remove('hidden');
+                classeSection.classList.add('hidden');
                 await loadProfStatus(userId);
+            } else if (user.type === 'élève') {
+                profSection.classList.add('hidden');
+                classeSection.classList.remove('hidden');
+                await populateClasseSelect('edit-classe', user.id_classe);
             } else {
                 profSection.classList.add('hidden');
+                classeSection.classList.add('hidden');
             }
 
             document.getElementById('modal-edit').classList.remove('hidden');
@@ -843,6 +895,8 @@
             const nom = document.getElementById('edit-nom').value.trim();
             const prenom = document.getElementById('edit-prenom').value.trim();
             const type = document.getElementById('edit-type').value;
+            const classeVal = document.getElementById('edit-classe').value;
+            const id_classe = type === 'élève' && classeVal ? parseInt(classeVal) : null;
 
             const errEl = document.getElementById('edit-error');
             const errMsg = document.getElementById('edit-error-msg');
@@ -862,11 +916,14 @@
             btnText.textContent = 'Enregistrement...';
             errEl.classList.add('hidden');
 
+            const payload = { nom, prenom, type, is_active: editIsActive };
+            if (type === 'élève') payload.id_classe = id_classe;
+
             try {
                 const res = await fetch(`/admin/users/${userId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nom, prenom, type, is_active: editIsActive })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
