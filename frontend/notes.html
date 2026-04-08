@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <script src="header.js" defer></script>
+    <script src="user-menu.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body class="m-0 font-sans text-slate-800">
+
+
+    <!-- ═══════════════════════════════════ VUE ELEVE / PARENT -->
+    <div id="vue-eleve" class="hidden relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2">
+
+        <div class="w-full bg-white shadow-md rounded-t-xl p-0">
+            <div class="flex items-center justify-between px-4 pt-2 pb-1 gap-4">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-sm font-bold text-indigo-900">Détails de mes notes</h2>
+                    <span id="eleve-identite" class="text-sm font-bold text-slate-500"></span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 px-4 pb-3">
+                <select id="trimestre-select" class="px-4 py-0 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 hover:border-indigo-400 cursor-pointer focus:outline-none focus:border-indigo-500">
+                    <option value="annee" selected>Année globale</option>
+                    <option value="1">Trimestre 1</option>
+                    <option value="2">Trimestre 2</option>
+                    <option value="3">Trimestre 3</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="w-full h-[85%] flex gap-2">
+            <div class="flex-1 bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-bl-2xl overflow-hidden flex flex-col">
+                <div class="p-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between h-10">
+                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Mes notes</h3>
+                </div>
+                <div id="mes-notes-list" class="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1"></div>
+            </div>
+            <div class="flex-[2] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-br-2xl overflow-hidden flex flex-col">
+                <div class="p-2 border-b border-slate-100 bg-slate-50/50 h-10 flex items-center">
+                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Détails de la note</h3>
+                </div>
+                <div id="details-content" class="flex-1 overflow-y-auto p-4">
+                    <div class="text-[10px] text-slate-500 text-center mt-8">Sélectionnez une note pour voir les détails</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ VUE PROF -->
+    <div id="vue-prof" class="hidden relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2">
+
+        <!-- Barre de sélection -->
+        <div class="w-full bg-white shadow-md rounded-t-xl p-0">
+            <div class="flex items-center justify-between px-4 pt-2 pb-1">
+                <h2 class="text-sm font-bold text-indigo-900">Saisie des notes</h2>
+                <span id="prof-feedback" class="text-xs font-semibold text-emerald-600 hidden"></span>
+            </div>
+            <div class="flex items-center gap-3 px-4 pb-3 flex-wrap">
+                <select id="prof-classe-select" class="px-3 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Classe --</option>
+                </select>
+                <select id="prof-matiere-select" class="px-3 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Matière --</option>
+                </select>
+                <input id="prof-date" type="date" class="px-3 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500">
+                <div class="flex items-center gap-1">
+                    <span class="text-xs text-slate-500">/ </span>
+                    <input id="prof-note-max" type="number" min="1" max="100" value="20"
+                        class="w-16 px-2 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500" placeholder="/ 20">
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs text-slate-500">Coef.</span>
+                    <input id="prof-coef" type="number" min="1" max="10" value="1"
+                        class="w-14 px-2 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500">
+                </div>
+                <button id="prof-load-btn"
+                    class="px-4 py-1 text-xs font-bold text-white bg-indigo-700 hover:bg-indigo-800 rounded transition-colors">
+                    Charger
+                </button>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="w-full h-[85%] flex gap-2">
+
+            <!-- Colonne gauche : saisie nouvelle éval -->
+            <div class="flex-1 bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-bl-2xl overflow-hidden flex flex-col">
+                <div class="p-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between h-10">
+                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Nouvelle évaluation</h3>
+                    <button id="prof-save-btn"
+                        class="px-3 py-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors hidden">
+                        <i class="fas fa-save mr-1"></i>Enregistrer
+                    </button>
+                </div>
+                <div id="prof-eleves-list" class="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-1">
+                    <div class="text-[10px] text-slate-400 text-center mt-8">Sélectionnez une classe et une matière</div>
+                </div>
+            </div>
+
+            <!-- Colonne droite : évals existantes -->
+            <div class="flex-[2] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-br-2xl overflow-hidden flex flex-col">
+                <div class="p-2 border-b border-slate-100 bg-slate-50/50 h-10 flex items-center">
+                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Évaluations existantes</h3>
+                </div>
+                <div id="prof-evals-list" class="flex-1 overflow-y-auto p-3 flex flex-col gap-1">
+                    <div class="text-[10px] text-slate-400 text-center mt-8">Aucune évaluation chargée</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ VUE ADMIN -->
+    <div id="vue-admin" class="hidden relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2">
+
+        <div class="w-full bg-white shadow-md rounded-t-xl p-0">
+            <div class="flex items-center justify-between px-4 pt-2 pb-1">
+                <h2 class="text-sm font-bold text-indigo-900">Notes — Vue administrateur</h2>
+            </div>
+            <div class="flex items-center gap-3 px-4 pb-3 flex-wrap">
+                <select id="admin-classe-select" class="px-3 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Classe --</option>
+                </select>
+                <select id="admin-eleve-select" class="px-3 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500" disabled>
+                    <option value="">-- Élève --</option>
+                </select>
+                <select id="admin-trimestre-select" class="px-3 py-1 text-sm font-semibold border-2 border-indigo-200 bg-white text-indigo-900 focus:outline-none focus:border-indigo-500">
+                    <option value="annee" selected>Année globale</option>
+                    <option value="1">Trimestre 1</option>
+                    <option value="2">Trimestre 2</option>
+                    <option value="3">Trimestre 3</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="w-full h-[85%] flex gap-2">
+            <div class="flex-1 bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-bl-2xl overflow-hidden flex flex-col">
+                <div class="p-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between h-10">
+                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Notes de l'élève</h3>
+                </div>
+                <div id="admin-notes-list" class="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1">
+                    <div class="text-[10px] text-slate-400 text-center mt-8">Sélectionnez une classe puis un élève</div>
+                </div>
+            </div>
+            <div class="flex-[2] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-br-2xl overflow-hidden flex flex-col">
+                <div class="p-2 border-b border-slate-100 bg-slate-50/50 h-10 flex items-center">
+                    <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Détails de la note</h3>
+                </div>
+                <div id="admin-details-content" class="flex-1 overflow-y-auto p-4">
+                    <div class="text-[10px] text-slate-500 text-center mt-8">Sélectionnez une note pour voir les détails</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ STYLES -->
+    <style>
+        .note-item {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 0.5rem;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer; transition: all 0.15s ease;
+            border: none; border-left: 3px solid transparent;
+            width: 100%; box-sizing: border-box;
+        }
+        .note-item:hover { background: rgba(255,255,255,0.8); border-left-color: #e6aeae; }
+        .note-item.active { background: rgba(255,255,255,0.9); border-left-color: #ef4444; }
+
+        .note-date-badge {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-width: 40px; height: 40px;
+            font-size: 0.6rem; font-weight: 700;
+            color: white; text-transform: uppercase;
+            letter-spacing: 0.025em; flex-shrink: 0;
+        }
+        .note-item-info { flex: 1; min-width: 0; }
+        .note-item-matiere { font-size: 0.8rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.025em; line-height: 1.2; }
+        .note-item-moyenne { font-size: 0.7rem; color: #64748b; line-height: 1.2; }
+        .note-item-value { font-size: 1rem; font-weight: 700; color: #6366f1; min-width: 40px; text-align: right; flex-shrink: 0; }
+
+        .details-container { display: flex; flex-direction: column; gap: 1.5rem; }
+        .details-header { display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(255,255,255,0.3); }
+        .details-matiere { font-size: 1.125rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.025em; }
+        .details-date { font-size: 0.875rem; color: #64748b; }
+        .details-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.3); border-radius: 0.375rem; }
+        .details-label { font-size: 0.875rem; font-weight: 600; color: #475569; }
+        .details-label.highlight { color: #6366f1; }
+        .details-value { font-size: 0.875rem; font-weight: 700; color: #1e293b; }
+        .details-value.highlight { color: #6366f1; font-size: 1rem; }
+
+        /* Ligne élève pour la saisie prof */
+        .eleve-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.4rem 0.5rem;
+            background: rgba(255,255,255,0.5);
+            border-left: 3px solid transparent;
+        }
+        .eleve-row:hover { background: rgba(255,255,255,0.8); }
+        .eleve-nom { flex: 1; font-size: 0.8rem; font-weight: 600; color: #1e293b; }
+        .eleve-note-input {
+            width: 64px; padding: 0.2rem 0.5rem;
+            font-size: 0.85rem; font-weight: 700; text-align: center;
+            border: 2px solid #c7d2fe; border-radius: 0.375rem;
+            outline: none; background: white; color: #4338ca;
+        }
+        .eleve-note-input:focus { border-color: #6366f1; }
+
+        /* Ligne eval existante */
+        .eval-row {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255,255,255,0.5);
+            border-left: 3px solid #c7d2fe;
+            border-radius: 0 0.375rem 0.375rem 0;
+        }
+        .eval-row:hover { background: rgba(255,255,255,0.8); }
+
+        /* Scrollbars */
+        #mes-notes-list::-webkit-scrollbar,
+        #prof-eleves-list::-webkit-scrollbar,
+        #prof-evals-list::-webkit-scrollbar,
+        #admin-notes-list::-webkit-scrollbar { width: 6px; }
+        #mes-notes-list::-webkit-scrollbar-track,
+        #prof-eleves-list::-webkit-scrollbar-track,
+        #prof-evals-list::-webkit-scrollbar-track,
+        #admin-notes-list::-webkit-scrollbar-track { background: transparent; }
+        #mes-notes-list::-webkit-scrollbar-thumb,
+        #prof-eleves-list::-webkit-scrollbar-thumb,
+        #prof-evals-list::-webkit-scrollbar-thumb,
+        #admin-notes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+    </style>
+
+    <!-- ═══════════════════════════════════════════════════════════ SCRIPT -->
+    <script>
+    // ────────────────────────────────────────────────────────── UTILS
+    const MOIS = ['jan.','fev.','mars','avr.','mai','juin','juil.','aout','sept.','oct.','nov.','dec.'];
+    const COULEURS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316','#06b6d4'];
+
+    function fmtDate(isoStr) {
+        const d = new Date(isoStr);
+        return { jour: d.getDate(), mois: MOIS[d.getMonth()], annee: d.getFullYear() };
+    }
+
+    function noteColor(note, noteMax) {
+        const pct = note / noteMax;
+        if (pct >= 0.8) return '#10b981';
+        if (pct >= 0.6) return '#6366f1';
+        if (pct >= 0.4) return '#f59e0b';
+        return '#ef4444';
+    }
+
+    function renderDetailNote(note, container) {
+        const { jour, mois, annee } = fmtDate(note.date_evaluation);
+        container.innerHTML = `
+            <div class="details-container">
+                <div class="details-header">
+                    <div class="details-matiere">${note.matiere}</div>
+                    <div class="details-date">Note du ${jour} ${mois} ${annee}</div>
+                </div>
+                <div class="details-row">
+                    <span class="details-label highlight">Note :</span>
+                    <span class="details-value highlight">${Number(note.note).toFixed(2)} / ${note.note_max}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">Moyenne classe :</span>
+                    <span class="details-value">${note.moyenne_classe !== null ? Number(note.moyenne_classe).toFixed(2) : '--'}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">Note la plus haute :</span>
+                    <span class="details-value">${note.note_plus_haute !== null ? Number(note.note_plus_haute).toFixed(2) : '--'}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">Note la plus basse :</span>
+                    <span class="details-value">${note.note_plus_basse !== null ? Number(note.note_plus_basse).toFixed(2) : '--'}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">Coefficient :</span>
+                    <span class="details-value">${note.coefficient}</span>
+                </div>
+            </div>`;
+    }
+
+    function renderNotesList(notes, listEl, detailEl) {
+        if (!notes.length) {
+            listEl.innerHTML = '<div class="text-[10px] text-slate-400 text-center mt-8">Aucune note</div>';
+            return;
+        }
+        let selectedId = null;
+        listEl.innerHTML = notes.map(n => {
+            const { jour, mois } = fmtDate(n.date_evaluation);
+            const couleur = n.couleur || noteColor(n.note, n.note_max);
+            const moyenne = n.moyenne_classe !== null ? Number(n.moyenne_classe).toFixed(2) : '--';
+            return `<div class="note-item" data-id="${n.id}" onclick="selectNoteItem(${n.id})">
+                <div class="note-date-badge" style="background:${couleur}">
+                    <div>${jour}</div><div>${mois}</div>
+                </div>
+                <div class="note-item-info">
+                    <div class="note-item-matiere">${n.matiere}</div>
+                    <div class="note-item-moyenne">Moy. classe : ${moyenne}</div>
+                </div>
+                <div class="note-item-value">${Number(n.note).toFixed(2)}</div>
+            </div>`;
+        }).join('');
+
+        window._currentNotes = notes;
+        window._currentDetailEl = detailEl;
+        window._currentListEl = listEl;
+    }
+
+    window.selectNoteItem = function(id) {
+        const notes = window._currentNotes || [];
+        const listEl = window._currentListEl;
+        const detailEl = window._currentDetailEl;
+        if (!listEl || !detailEl) return;
+        listEl.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
+        const el = listEl.querySelector(`[data-id="${id}"]`);
+        if (el) el.classList.add('active');
+        const note = notes.find(n => n.id === id);
+        if (note) renderDetailNote(note, detailEl);
+    };
+
+    // ────────────────────────────────────────────────────── VUE ELEVE/PARENT
+    async function initVueEleve(user) {
+        document.getElementById('vue-eleve').classList.remove('hidden');
+
+        const identite = document.getElementById('eleve-identite');
+        if (identite) identite.textContent = `${user.nom} ${user.prenom}`;
+
+        const listEl = document.getElementById('mes-notes-list');
+        const detailEl = document.getElementById('details-content');
+
+        async function chargerNotes(trimestre) {
+            const url = trimestre === 'annee' ? '/api/notes' : `/api/notes/trimestre/${trimestre}`;
+            try {
+                const r = await fetch(url);
+                if (!r.ok) throw new Error();
+                const notes = await r.json();
+                renderNotesList(notes, listEl, detailEl);
+            } catch {
+                listEl.innerHTML = '<div class="p-3 text-xs text-red-600">Erreur lors du chargement</div>';
+            }
+        }
+
+        document.getElementById('trimestre-select').addEventListener('change', e => chargerNotes(e.target.value));
+        chargerNotes('annee');
+    }
+
+    // ────────────────────────────────────────────────────── VUE PROF
+    async function initVueProf() {
+        document.getElementById('vue-prof').classList.remove('hidden');
+
+        // Charger classes & matières
+        const r = await fetch('/api/notes/classes');
+        if (!r.ok) return;
+        const data = await r.json();
+
+        const classeSelect = document.getElementById('prof-classe-select');
+        const matiereSelect = document.getElementById('prof-matiere-select');
+        const combinaisons = data.combinaisons || null; // null = admin (pas de restriction)
+
+        data.classes.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id; o.textContent = c.nom;
+            classeSelect.appendChild(o);
+        });
+        // Toutes les matières (référence immuable)
+        const toutesLesMatieres = data.matieres;
+
+        // Reconstruire le select matière avec uniquement les options valides
+        function filtrerMatieres() {
+            matiereSelect.innerHTML = '<option value="">-- Matière --</option>';
+            if (!combinaisons) {
+                // admin : toutes les matières
+                toutesLesMatieres.forEach(m => {
+                    const o = document.createElement('option');
+                    o.value = m.id; o.textContent = m.nom;
+                    matiereSelect.appendChild(o);
+                });
+                return;
+            }
+            const idClasse = parseInt(classeSelect.value);
+            if (!idClasse) return; // aucune classe sélectionnée : select vide
+            const idsAutorises = combinaisons
+                .filter(c => c.id_classe === idClasse)
+                .map(c => c.id_matiere);
+            toutesLesMatieres
+                .filter(m => idsAutorises.includes(m.id))
+                .forEach(m => {
+                    const o = document.createElement('option');
+                    o.value = m.id; o.textContent = m.nom;
+                    matiereSelect.appendChild(o);
+                });
+        }
+
+        classeSelect.addEventListener('change', filtrerMatieres);
+        filtrerMatieres(); // état initial
+
+        // Définir la date d'aujourd'hui par défaut
+        document.getElementById('prof-date').valueAsDate = new Date();
+
+        // Charger les élèves + évals existantes
+        document.getElementById('prof-load-btn').addEventListener('click', async () => {
+            const idClasse = classeSelect.value;
+            const idMatiere = matiereSelect.value;
+            if (!idClasse || !idMatiere) {
+                alert('Sélectionnez une classe et une matière');
+                return;
+            }
+            await chargerVueProf(idClasse, idMatiere);
+        });
+    }
+
+    async function chargerVueProf(idClasse, idMatiere) {
+        const elevesEl = document.getElementById('prof-eleves-list');
+        const evalsEl = document.getElementById('prof-evals-list');
+        const saveBtn = document.getElementById('prof-save-btn');
+
+        elevesEl.innerHTML = '<div class="text-[10px] text-slate-400 text-center mt-4">Chargement...</div>';
+        evalsEl.innerHTML = '<div class="text-[10px] text-slate-400 text-center mt-4">Chargement...</div>';
+
+        const [rEleves, rEvals] = await Promise.all([
+            fetch(`/api/notes/eleves/${idClasse}`),
+            fetch(`/api/notes/evaluations?classe_id=${idClasse}&matiere_id=${idMatiere}`),
+        ]);
+
+        const eleves = rEleves.ok ? await rEleves.json() : [];
+        const evals = rEvals.ok ? await rEvals.json() : [];
+
+        // Colonne gauche : saisie
+        if (!eleves.length) {
+            elevesEl.innerHTML = '<div class="text-[10px] text-slate-400 text-center mt-8">Aucun élève dans cette classe</div>';
+        } else {
+            saveBtn.classList.remove('hidden');
+            elevesEl.innerHTML = eleves.map(e => `
+                <div class="eleve-row">
+                    <span class="eleve-nom">${e.nom} ${e.prenom}</span>
+                    <input class="eleve-note-input" type="number" min="0" step="0.5"
+                        data-eleve-id="${e.id}" placeholder="--">
+                </div>`).join('');
+        }
+
+        // Colonne droite : évals existantes
+        renderEvalsExistantes(evals, evalsEl, idClasse, idMatiere);
+
+        // Enregistrement batch
+        saveBtn.onclick = () => sauvegarderNotes(idClasse, idMatiere, evalsEl);
+    }
+
+    function renderEvalsExistantes(evals, container, idClasse, idMatiere) {
+        if (!evals.length) {
+            container.innerHTML = '<div class="text-[10px] text-slate-400 text-center mt-8">Aucune évaluation pour cette combinaison</div>';
+            return;
+        }
+        // Grouper par date
+        const parDate = {};
+        evals.forEach(ev => {
+            if (!parDate[ev.date]) parDate[ev.date] = [];
+            parDate[ev.date].push(ev);
+        });
+
+        container.innerHTML = Object.entries(parDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, rows]) => `
+            <div class="mb-3">
+                <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-1">
+                    ${date} — / ${rows[0].note_max} — coef. ${rows[0].coefficient}
+                </div>
+                ${rows.map(ev => `
+                <div class="eval-row" id="eval-row-${ev.id}">
+                    <span class="flex-1 text-xs font-semibold text-slate-700">${ev.eleve_nom} ${ev.eleve_prenom}</span>
+                    <input class="eleve-note-input w-14" type="number" min="0" step="0.5"
+                        value="${ev.note}" data-eval-id="${ev.id}" onchange="updateNote(${ev.id}, this.value)">
+                    <span class="text-[10px] text-slate-400">/ ${ev.note_max}</span>
+                    <button onclick="deleteNote(${ev.id}, ${idClasse}, ${idMatiere})"
+                        class="ml-2 text-red-400 hover:text-red-600 transition-colors text-xs">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>`).join('')}
+            </div>`).join('');
+    }
+
+    async function sauvegarderNotes(idClasse, idMatiere, evalsEl) {
+        const inputs = document.querySelectorAll('#prof-eleves-list .eleve-note-input');
+        const date = document.getElementById('prof-date').value;
+        const noteMax = parseFloat(document.getElementById('prof-note-max').value) || 20;
+        const coef = parseInt(document.getElementById('prof-coef').value) || 1;
+
+        if (!date) { alert('Veuillez saisir une date'); return; }
+
+        const notes = [];
+        inputs.forEach(inp => {
+            if (inp.value !== '') {
+                notes.push({ id_eleve: parseInt(inp.dataset.eleveId), note: parseFloat(inp.value) });
+            }
+        });
+
+        if (!notes.length) { alert('Aucune note saisie'); return; }
+
+        const r = await fetch('/api/notes/evaluations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_classe: parseInt(idClasse), id_matiere: parseInt(idMatiere), date, note_max: noteMax, coefficient: coef, notes }),
+        });
+
+        if (r.ok) {
+            const data = await r.json();
+            showFeedback(`${data.created} note(s) enregistrée(s)`, 'success');
+            inputs.forEach(inp => inp.value = '');
+            // Rafraîchir les évals existantes
+            const rEvals = await fetch(`/api/notes/evaluations?classe_id=${idClasse}&matiere_id=${idMatiere}`);
+            if (rEvals.ok) renderEvalsExistantes(await rEvals.json(), evalsEl, idClasse, idMatiere);
+        } else {
+            const errData = await r.json().catch(() => ({}));
+            showFeedback(errData.error || `Erreur ${r.status}`, 'error');
+        }
+    }
+
+    window.updateNote = async function(evalId, newNote) {
+        const r = await fetch(`/api/notes/evaluations/${evalId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note: parseFloat(newNote) }),
+        });
+        if (r.ok) showFeedback('Note mise à jour', 'success');
+        else showFeedback('Erreur de mise à jour', 'error');
+    };
+
+    window.deleteNote = async function(evalId, idClasse, idMatiere) {
+        if (!confirm('Supprimer cette note ?')) return;
+        const r = await fetch(`/api/notes/evaluations/${evalId}`, { method: 'DELETE' });
+        if (r.ok) {
+            const row = document.getElementById(`eval-row-${evalId}`);
+            if (row) row.remove();
+            showFeedback('Note supprimée', 'success');
+        } else {
+            showFeedback('Erreur lors de la suppression', 'error');
+        }
+    };
+
+    function showFeedback(msg, type) {
+        const el = document.getElementById('prof-feedback');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = `text-xs font-semibold ${type === 'success' ? 'text-emerald-600' : 'text-red-600'}`;
+        el.classList.remove('hidden');
+        setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    // ────────────────────────────────────────────────────── VUE ADMIN
+    async function initVueAdmin() {
+        document.getElementById('vue-admin').classList.remove('hidden');
+
+        const rClasses = await fetch('/api/notes/classes');
+        if (!rClasses.ok) return;
+        const data = await rClasses.json();
+
+        const classeSelect = document.getElementById('admin-classe-select');
+        const eleveSelect = document.getElementById('admin-eleve-select');
+        const triSelect = document.getElementById('admin-trimestre-select');
+        const listEl = document.getElementById('admin-notes-list');
+        const detailEl = document.getElementById('admin-details-content');
+
+        data.classes.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id; o.textContent = c.nom;
+            classeSelect.appendChild(o);
+        });
+
+        classeSelect.addEventListener('change', async () => {
+            const idClasse = classeSelect.value;
+            eleveSelect.innerHTML = '<option value="">-- Élève --</option>';
+            eleveSelect.disabled = !idClasse;
+            if (!idClasse) return;
+
+            const r = await fetch(`/api/notes/eleves/${idClasse}`);
+            if (!r.ok) return;
+            const eleves = await r.json();
+            eleves.forEach(e => {
+                const o = document.createElement('option');
+                o.value = e.id; o.textContent = `${e.nom} ${e.prenom}`;
+                eleveSelect.appendChild(o);
+            });
+        });
+
+        async function chargerNotesAdmin() {
+            const idEleve = eleveSelect.value;
+            const trimestre = triSelect.value;
+            if (!idEleve) return;
+
+            const url = trimestre === 'annee'
+                ? `/api/notes/eleve/${idEleve}`
+                : `/api/notes/eleve/${idEleve}?trimestre=${trimestre}`;
+
+            try {
+                const r = await fetch(url);
+                if (!r.ok) throw new Error();
+                const notes = await r.json();
+                renderNotesList(notes, listEl, detailEl);
+            } catch {
+                listEl.innerHTML = '<div class="p-3 text-xs text-red-600">Erreur lors du chargement</div>';
+            }
+        }
+
+        eleveSelect.addEventListener('change', chargerNotesAdmin);
+        triSelect.addEventListener('change', chargerNotesAdmin);
+    }
+
+    // ────────────────────────────────────────────────────── INIT
+    document.addEventListener('auth-ready', (e) => {
+        const user = e.detail;
+        if (user.type === 'élève' || user.type === 'parent') {
+            initVueEleve(user);
+        } else if (user.type === 'employé') {
+            initVueProf();
+        } else if (user.type === 'administrateur') {
+            initVueAdmin();
+        }
+    });
+    </script>
+</body>
+</html>

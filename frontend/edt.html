@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Site Web - Grille Uniforme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <script src="header.js" defer></script>
+    <script src="user-menu.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body class="m-0 font-sans text-slate-800">
+    
+
+    <div class="relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2">
+        
+        <!-- ════════════════════════════════════════════════════════════════
+             ║              SÉLECTEUR DE SEMAINES                          ║
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="w-full bg-white shadow-md rounded-t-xl p-0">
+            <div class="flex items-center justify-between px-4 pt-2 pb-1 gap-4">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-sm font-bold text-indigo-900" id="edt-page-title">Mon emploi du temps</h2>
+                    <div id="week-info" class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <span id="week-dates">--</span>
+                        <span id="week-type" class="px-3 py-1 rounded text-white text-xs">Semaine A</span>
+                    </div>
+                    <!-- Sélecteur de classe (visible admin/direction uniquement, injecté par JS) -->
+                    <select id="edt-classe-select" class="hidden text-xs border border-slate-300 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:border-indigo-600">
+                        <option value="">Toutes les classes</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-new-cours" class="hidden bg-indigo-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Nouveau cours
+                    </button>
+                    <button id="export-ical-btn" class="flex items-center justify-center w-7 h-7 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-colors" title="Exporter au format iCal">
+                        <i class="fas fa-calendar text-lg"></i>
+                    </button>
+                    <button id="export-pdf-btn" class="flex items-center justify-center w-7 h-7 text-red-700 bg-red-50 hover:bg-red-100 rounded-full transition-colors" title="Exporter au format PDF">
+                        <i class="fas fa-file-pdf text-lg"></i>
+                    </button>
+                    <button id="export-jpg-btn" class="flex items-center justify-center w-7 h-7 text-green-700 bg-green-50 hover:bg-green-100 rounded-full transition-colors" title="Exporter au format JPG">
+                        <i class="fas fa-image text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="weeks-container" class="flex w-full">
+                <!-- Les semaines seront générées par JavaScript -->
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             ║              EMPLOI DU TEMPS EN GRAND                       ║
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="w-full h-[85%] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-none rounded-b-2xl overflow-hidden flex p-[0.5%] gap-0">
+
+            <div class="flex flex-col w-8 shrink-0 mr-1">
+                <div class="h-[40px] shrink-0"></div>
+                <div class="flex-1 flex flex-col">
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">8H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">9H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">10H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">11H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">12H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">13H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">14H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">15H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">16H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">17H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">18H</span></div><div class="flex-1"></div></div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex gap-[0.5%]">
+                <div class="jour-container" data-jour="lundi" data-index="1">
+                    <div class="en-tete-jour"><span class="jour-nom">LUNDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-lundi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="mardi" data-index="2">
+                    <div class="en-tete-jour"><span class="jour-nom">MARDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-mardi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="mercredi" data-index="3">
+                    <div class="en-tete-jour"><span class="jour-nom">MERCREDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-mercredi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="jeudi" data-index="4">
+                    <div class="en-tete-jour"><span class="jour-nom">JEUDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-jeudi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="vendredi" data-index="5">
+                    <div class="en-tete-jour"><span class="jour-nom">VENDREDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-vendredi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="samedi" data-index="6">
+                    <div class="en-tete-jour"><span class="jour-nom">SAMEDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-samedi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        /* Tooltip */
+        .cours-tooltip {
+            display: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(100% + 6px);
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 10px;
+            line-height: 1.6;
+            white-space: nowrap;
+            z-index: 999;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        }
+        .cours-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(15, 23, 42, 0.95);
+        }
+        .cours-block:hover .cours-tooltip {
+            display: none;
+        }
+        .cours-block {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            overflow: visible;
+            cursor: pointer;
+            transition: filter 0.15s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cours-block:hover {
+            filter: brightness(0.95);
+            z-index: 100;
+        }
+        .cours-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 4px;
+            overflow: hidden;
+        }
+        .cours-nom {
+            font-size: 9px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.1;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .cours-infos {
+            font-size: 8px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.1;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .jour-container {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .en-tete-jour {
+            height: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom-width: 1px;
+            border-radius: 0.75rem 0.75rem 0 0;
+            transition: colors 0.2s;
+            flex-shrink: 0;
+        }
+        .devoir-checkbox {
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+        .devoir-checkbox:checked {
+            accent-color: #818cf8;
+        }
+        .cours-annule {
+            opacity: 0.45;
+            text-decoration: line-through;
+        }
+    </style>
+
+    <!-- Modal édition de cours -->
+    <div id="modal-edit-cours" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-md p-6 mx-4">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Modifier le cours</h3>
+            <div id="edit-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="edit-error-msg"></span>
+            </div>
+            <form id="form-edit-cours" novalidate class="space-y-3">
+                <input type="hidden" id="edit-cours-id">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matiere</label>
+                    <select id="e-matiere" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div id="e-prof-row">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Professeur</label>
+                    <select id="e-prof" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="e-classe" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Debut</label>
+                        <input type="datetime-local" id="e-debut" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Fin</label>
+                        <input type="datetime-local" id="e-fin" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Salle (optionnel)</label>
+                    <select id="e-salle" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Etat</label>
+                    <select id="e-etat" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="planifié">Planifie</option>
+                        <option value="en cours">En cours</option>
+                        <option value="terminé">Termine</option>
+                        <option value="annulé">Annule</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="btn-delete-cours" class="px-3 py-2 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                    <button type="button" id="btn-cancel-edit-cours" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-edit-cours" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="edit-btn-text">Enregistrer</span>
+                        <i id="edit-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal création de cours (admin / direction / prof) -->
+    <div id="modal-cours" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/90 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-md p-6 mx-4">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouveau cours</h3>
+            <div id="modal-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="modal-error-msg"></span>
+            </div>
+            <form id="form-cours" novalidate class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matiere</label>
+                    <select id="c-matiere" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div id="c-prof-row">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Professeur</label>
+                    <select id="c-prof" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="c-classe" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Debut</label>
+                        <input type="datetime-local" id="c-debut" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Fin</label>
+                        <input type="datetime-local" id="c-fin" required class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Salle (optionnel)</label>
+                    <select id="c-salle" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="btn-cancel-cours" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-cours" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="submit-text">Creer</span>
+                        <i id="submit-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ── Role & bouton creation ─────────────────────────────────────────
+        let selectsLoaded = false;
+
+        function initRole() {
+            const user = window.__currentUser;
+            if (!user) return;
+
+            const canManage = user.type === 'administrateur' || (user.type === 'employé' && user.is_direction);
+            if (!canManage) return;
+
+            document.getElementById('btn-new-cours').classList.remove('hidden');
+            document.getElementById('btn-new-cours').addEventListener('click', openCreateModal);
+        }
+
+        // ── Chargement lazy des selects (a l'ouverture du modal) ─────────
+
+        function fillSelect(id, items, labelField, placeholder, labelFn) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = labelFn ? labelFn(item) : item[labelField];
+                sel.appendChild(opt);
+            });
+        }
+
+        async function loadSelectData() {
+            if (selectsLoaded) return;
+
+            const [mRes, pRes, cRes, sRes] = await Promise.all([
+                fetch('/edt/matieres'),
+                fetch('/edt/profs'),
+                fetch('/edt/classes'),
+                fetch('/edt/salles'),
+            ]);
+
+            if (mRes.ok) fillSelect('c-matiere', await mRes.json(), 'nom', '-- Matiere --');
+            if (pRes.ok) fillSelect('c-prof', await pRes.json(), null, '-- Professeur --', p => `${p.prenom} ${p.nom}`);
+            if (cRes.ok) fillSelect('c-classe', await cRes.json(), 'label', '-- Classe --');
+            if (sRes.ok) fillSelect('c-salle', await sRes.json(), 'nom', '-- Aucune --');
+
+            if (!pRes.ok) {
+                document.getElementById('c-prof-row').classList.add('hidden');
+                document.getElementById('c-prof').removeAttribute('required');
+            }
+
+            selectsLoaded = true;
+        }
+
+        // ── Modal ─────────────────────────────────────────────────────────
+
+        async function openCreateModal() {
+            document.getElementById('modal-error').classList.add('hidden');
+            document.getElementById('form-cours').reset();
+            document.getElementById('modal-cours').classList.remove('hidden');
+
+            await loadSelectData();
+
+            const start = window.currentWeekStart;
+            if (start) {
+                const today = new Date();
+                const base = new Date(start);
+                const dayOffset = today >= start
+                    ? Math.min(Math.floor((today - start) / 86400000), 4)
+                    : 0;
+                base.setDate(base.getDate() + dayOffset);
+                const pad = n => String(n).padStart(2, '0');
+                const dateStr = `${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`;
+                document.getElementById('c-debut').value = `${dateStr}T08:00`;
+                document.getElementById('c-fin').value   = `${dateStr}T09:00`;
+            }
+        }
+
+        document.getElementById('btn-cancel-cours').addEventListener('click', () => {
+            document.getElementById('modal-cours').classList.add('hidden');
+        });
+
+        document.getElementById('form-cours').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('modal-error').classList.add('hidden');
+
+            const id_matiere = parseInt(document.getElementById('c-matiere').value);
+            const id_prof    = parseInt(document.getElementById('c-prof').value) || undefined;
+            const id_classe  = parseInt(document.getElementById('c-classe').value);
+            const debut      = document.getElementById('c-debut').value;
+            const fin        = document.getElementById('c-fin').value;
+            const id_salle   = parseInt(document.getElementById('c-salle').value) || undefined;
+
+            if (!id_matiere || !id_classe || !debut || !fin) {
+                document.getElementById('modal-error-msg').textContent = 'Matiere, classe, debut et fin sont requis.';
+                document.getElementById('modal-error').classList.remove('hidden');
+                return;
+            }
+            if (debut >= fin) {
+                document.getElementById('modal-error-msg').textContent = 'La fin doit etre apres le debut.';
+                document.getElementById('modal-error').classList.remove('hidden');
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit-cours');
+            const spinner   = document.getElementById('submit-spinner');
+            const btnText   = document.getElementById('submit-text');
+            submitBtn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Creation...';
+
+            const body = { id_matiere, id_classe, debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString() };
+            if (id_prof)  body.id_prof  = id_prof;
+            if (id_salle) body.id_salle = id_salle;
+
+            try {
+                const res = await fetch('/edt/cours', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('modal-error-msg').textContent = data.error || 'Erreur serveur.';
+                    document.getElementById('modal-error').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('modal-cours').classList.add('hidden');
+                if (window.currentWeekStart) loadCours(window.currentWeekStart);
+            } catch {
+                document.getElementById('modal-error-msg').textContent = 'Impossible de joindre le serveur.';
+                document.getElementById('modal-error').classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = 'Creer';
+            }
+        });
+
+        // ── Edition de cours ──────────────────────────────────────────────
+
+        function toLocalDT(isoStr) {
+            // Convertit "2026-04-03T06:00:00Z" en "2026-04-03T08:00" (heure locale)
+            const d = new Date(isoStr);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        async function openEditModal(coursId) {
+            const cours = MOCK_COURS.find(c => c._id === coursId);
+            if (!cours || !cours._raw) return;
+            const raw = cours._raw;
+
+            await loadSelectData();
+
+            document.getElementById('edit-cours-id').value = coursId;
+            document.getElementById('e-matiere').value   = raw.matiere?.id || '';
+            document.getElementById('e-prof').value      = raw.prof?.id    || '';
+            document.getElementById('e-classe').value    = raw.classe?.id  || '';
+            document.getElementById('e-salle').value     = raw.salle?.id   || '';
+            document.getElementById('e-etat').value      = raw.etat        || 'planifié';
+            document.getElementById('e-debut').value     = toLocalDT(raw.debut);
+            document.getElementById('e-fin').value       = toLocalDT(raw.fin);
+
+            // Synchroniser selects edit depuis selects create (deja peuples)
+            ['matiere','prof','classe','salle'].forEach(field => {
+                const src = document.getElementById(`c-${field}`);
+                const dst = document.getElementById(`e-${field}`);
+                if (src && dst && dst.options.length <= 1) {
+                    dst.innerHTML = src.innerHTML;
+                }
+            });
+            document.getElementById('e-matiere').value = raw.matiere?.id || '';
+            document.getElementById('e-prof').value    = raw.prof?.id    || '';
+            document.getElementById('e-classe').value  = raw.classe?.id  || '';
+            document.getElementById('e-salle').value   = raw.salle?.id   || '';
+
+            document.getElementById('edit-error').classList.add('hidden');
+            document.getElementById('modal-edit-cours').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-cancel-edit-cours').addEventListener('click', () => {
+            document.getElementById('modal-edit-cours').classList.add('hidden');
+        });
+
+        document.getElementById('btn-delete-cours').addEventListener('click', async () => {
+            if (!confirm('Supprimer ce cours ?')) return;
+            const id = document.getElementById('edit-cours-id').value;
+            const res = await fetch(`/edt/cours/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                document.getElementById('modal-edit-cours').classList.add('hidden');
+                if (window.currentWeekStart) loadCours(window.currentWeekStart);
+            } else {
+                const d = await res.json();
+                document.getElementById('edit-error-msg').textContent = d.error || 'Erreur';
+                document.getElementById('edit-error').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('form-edit-cours').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('edit-error').classList.add('hidden');
+
+            const id        = document.getElementById('edit-cours-id').value;
+            const id_matiere = parseInt(document.getElementById('e-matiere').value) || undefined;
+            const id_prof    = parseInt(document.getElementById('e-prof').value)    || undefined;
+            const id_classe  = parseInt(document.getElementById('e-classe').value)  || undefined;
+            const id_salle   = parseInt(document.getElementById('e-salle').value)   || undefined;
+            const etat       = document.getElementById('e-etat').value;
+            const debut      = document.getElementById('e-debut').value;
+            const fin        = document.getElementById('e-fin').value;
+
+            if (!debut || !fin || debut >= fin) {
+                document.getElementById('edit-error-msg').textContent = 'Dates invalides.';
+                document.getElementById('edit-error').classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-edit-cours');
+            const spinner = document.getElementById('edit-spinner');
+            const btnText = document.getElementById('edit-btn-text');
+            btn.disabled = true; spinner.classList.remove('hidden'); btnText.textContent = 'Enregistrement...';
+
+            const body = { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), etat };
+            if (id_matiere) body.id_matiere = id_matiere;
+            if (id_prof)    body.id_prof    = id_prof;
+            if (id_classe)  body.id_classe  = id_classe;
+            if (id_salle !== undefined) body.id_salle = id_salle || null;
+
+            try {
+                const res = await fetch(`/edt/cours/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('edit-error-msg').textContent = data.error || 'Erreur serveur.';
+                    document.getElementById('edit-error').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('modal-edit-cours').classList.add('hidden');
+                if (window.currentWeekStart) loadCours(window.currentWeekStart);
+            } catch {
+                document.getElementById('edit-error-msg').textContent = 'Impossible de joindre le serveur.';
+                document.getElementById('edit-error').classList.remove('hidden');
+            } finally {
+                btn.disabled = false; spinner.classList.add('hidden'); btnText.textContent = 'Enregistrer';
+            }
+        });
+
+        // Clic sur un bloc de cours (delegation)
+        document.addEventListener('click', (e) => {
+            const block = e.target.closest('.cours-block[data-cours-id]');
+            if (!block) return;
+            const user = window.__currentUser;
+            if (!user) return;
+            const canEdit = user.type === 'administrateur' || (user.type === 'employé' && user.is_direction);
+            if (!canEdit) return;
+            openEditModal(parseInt(block.dataset.coursId));
+        });
+
+        // Attendre que auth-guard ait expose window.__currentUser
+        if (window.__currentUser) {
+            initRole();
+        } else {
+            document.addEventListener('auth-ready', () => initRole());
+        }
+    </script>
+</body>
+</html>

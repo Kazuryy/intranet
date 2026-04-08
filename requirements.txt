@@ -1,0 +1,32 @@
+# Web framework
+Flask==3.1.3
+
+# Base de données
+Flask-SQLAlchemy==3.1.1
+PyMySQL==1.1.1
+
+# Auth & sécurité
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
+Flask-WTF==1.2.2
+
+# Rate limiting
+Flask-Limiter==4.1.1
+
+# Headers sécurité
+Flask-Talisman==1.1.0
+
+# Sanitisation HTML
+bleach==6.2.0
+
+# Tests
+pytest==8.3.5
+pytest-cov==6.0.0
+
+# Linting
+flake8==7.2.0
+
+# Environnement
+python-dotenv==1.2.2
+cryptography
+gunicorn==23.0.0

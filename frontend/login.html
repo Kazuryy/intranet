@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Guardia Intranet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="m-0 font-sans text-slate-800 min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100">
+
+    <div class="h-[10vh] flex flex-col shadow-md z-50 relative">
+        <div class="h-[9vh] bg-white flex items-center justify-center">
+            <h1 class="m-0 text-3xl text-indigo-900 font-bold">PRONOTE V2 TEST</h1>
+        </div>
+        <div class="h-[6vh] bg-indigo-900"></div>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-2xl w-full max-w-md p-8">
+
+            <h2 class="text-xl font-bold text-indigo-900 mb-1 uppercase tracking-widest">Connexion</h2>
+            <p class="text-[11px] text-slate-500 mb-6">Adresse mail <span class="font-semibold">@guardiaschool.fr</span> et mot de passe</p>
+
+            <div id="error-banner" class="hidden mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="error-message"></span>
+            </div>
+
+            <form id="login-form" novalidate>
+                <div class="mb-4">
+                    <label for="email" class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Adresse mail</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="prenom.nom@guardiaschool.fr"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400"
+                        required
+                    >
+                </div>
+
+                <div class="mb-6">
+                    <label for="password" class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Mot de passe</label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            autocomplete="current-password"
+                            placeholder="••••••••"
+                            class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-10"
+                            required
+                        >
+                        <button type="button" id="toggle-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-700 transition-colors">
+                            <i id="toggle-icon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    id="submit-btn"
+                    class="w-full bg-indigo-900 text-white text-sm font-bold py-2.5 rounded-lg hover:bg-indigo-800 hover:shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                    <span id="btn-text">Se connecter</span>
+                    <i id="btn-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                </button>
+            </form>
+
+            <div class="mt-5 pt-4 border-t border-white/60 text-center">
+                <p class="text-[10px] text-slate-500">
+                    Premiere connexion ? Utilisez le lien recu par votre administrateur.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorBanner = document.getElementById('error-banner');
+        const errorMessage = document.getElementById('error-message');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const togglePassword = document.getElementById('toggle-password');
+        const toggleIcon = document.getElementById('toggle-icon');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            toggleIcon.className = isPassword ? 'fa-solid fa-eye-slash text-xs' : 'fa-solid fa-eye text-xs';
+        });
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorBanner.classList.remove('hidden');
+        }
+
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            btnText.textContent = loading ? 'Connexion...' : 'Se connecter';
+            btnSpinner.classList.toggle('hidden', !loading);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorBanner.classList.add('hidden');
+
+            const email = document.getElementById('email').value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showError('Veuillez remplir tous les champs.');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    window.location.href = 'index.html';
+                } else if (res.status === 429) {
+                    showError('Trop de tentatives. Reessayez dans une minute.');
+                } else if (res.status === 403) {
+                    showError('Compte desactive. Contactez un administrateur.');
+                } else {
+                    showError(data.error || 'Identifiants invalides.');
+                }
+            } catch {
+                showError('Impossible de joindre le serveur. Reessayez.');
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>

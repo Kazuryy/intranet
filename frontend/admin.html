@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — Guardia Intranet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <script src="header.js" defer></script>
+    <script src="user-menu.js" defer></script>
+</head>
+<body class="m-0 font-sans text-slate-800 min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100">
+
+
+    <div class="flex-1 p-6">
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-5 border-b border-indigo-200">
+            <button data-tab="comptes" class="admin-tab px-4 py-2 text-sm font-bold text-indigo-900 border-b-2 border-indigo-900 -mb-px">Comptes</button>
+            <button data-tab="classes" class="admin-tab px-4 py-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-indigo-900 transition">Classes</button>
+            <button data-tab="matieres" class="admin-tab px-4 py-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-indigo-900 transition">Matières</button>
+            <button data-tab="salles" class="admin-tab px-4 py-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-indigo-900 transition">Salles</button>
+        </div>
+
+        <!-- ── Section Comptes ─────────────────────────────────────────────── -->
+        <div id="section-comptes">
+
+        <!-- En-tête -->
+        <div class="mb-5 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Gestion des comptes</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Créez, modifiez et désactivez les comptes utilisateurs.</p>
+            </div>
+            <button id="btn-new-user"
+                class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-plus text-xs"></i> Nouvel utilisateur
+            </button>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl p-3 mb-4 flex gap-3 items-center flex-wrap">
+            <div class="relative flex-1 min-w-[180px]">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input id="search-input" type="text" placeholder="Rechercher nom, prénom, username..."
+                    class="w-full pl-8 pr-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <select id="type-filter"
+                class="px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Tous les types</option>
+                <option value="administrateur">Administrateur</option>
+                <option value="employé">Employé</option>
+                <option value="élève">Élève</option>
+                <option value="parent">Parent</option>
+            </select>
+            <button id="btn-refresh" class="px-3 py-2 text-sm text-indigo-700 hover:text-indigo-900 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right text-xs"></i> Actualiser
+            </button>
+        </div>
+
+        <!-- Bannière erreur globale -->
+        <div id="error-banner" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="error-message"></span>
+        </div>
+
+        <!-- Tableau -->
+        <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-indigo-900/10 border-b border-white/60">
+                        <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Nom</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Prénom</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Username</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Statut</th>
+                        <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody">
+                    <tr id="loading-row">
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-400 text-xs">
+                            <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p id="users-count" class="text-xs text-slate-400 mt-2 text-right"></p>
+        </div><!-- /section-comptes -->
+
+        <!-- ── Section Classes ────────────────────────────────────────────── -->
+        <div id="section-classes" class="hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Classes</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Gérez les classes de l'établissement.</p>
+                </div>
+                <button id="btn-new-classe"
+                    class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Nouvelle classe
+                </button>
+            </div>
+            <div id="classes-error" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="classes-error-msg"></span>
+            </div>
+            <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-indigo-900/10 border-b border-white/60">
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Niveau</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Suffixe</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Année</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Prof principal</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classes-tbody">
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /section-classes -->
+
+        <!-- ── Section Matières ───────────────────────────────────────────── -->
+        <div id="section-matieres" class="hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Matières</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Gérez les matières enseignées.</p>
+                </div>
+                <button id="btn-new-matiere"
+                    class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Nouvelle matière
+                </button>
+            </div>
+            <div id="matieres-error" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="matieres-error-msg"></span>
+            </div>
+            <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-indigo-900/10 border-b border-white/60">
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Nom</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matieres-tbody">
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /section-matieres -->
+
+        <!-- ── Section Salles ─────────────────────────────────────────────── -->
+        <div id="section-salles" class="hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 uppercase tracking-widest">Salles</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Gérez les salles de l'établissement.</p>
+                </div>
+                <button id="btn-new-salle"
+                    class="bg-indigo-900 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-indigo-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Nouvelle salle
+                </button>
+            </div>
+            <div id="salles-error" class="hidden mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="salles-error-msg"></span>
+            </div>
+            <div class="bg-white/40 backdrop-blur-md border border-white/60 shadow rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-indigo-900/10 border-b border-white/60">
+                            <th class="px-4 py-3 text-left text-xs font-bold text-indigo-900 uppercase tracking-widest">Nom</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-indigo-900 uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salles-tbody">
+                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /section-salles -->
+
+    </div><!-- /flex-1 p-6 -->
+
+    <!-- Modal : nouvelle classe -->
+    <div id="modal-classe" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 id="modal-classe-title" class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvelle classe</h3>
+            <div id="classe-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="classe-error-msg"></span>
+            </div>
+            <input type="hidden" id="classe-id">
+            <form id="form-classe" novalidate>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Niveau (année)</label>
+                    <input id="classe-niveau" type="number" min="1" max="10" required placeholder="ex: 1"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Suffixe (groupe)</label>
+                    <input id="classe-suffixe" type="text" maxlength="10" placeholder="ex: A, B, C"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Année scolaire</label>
+                    <input id="classe-annee" type="number" min="2020" max="2100" required placeholder="ex: 2026"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Prof principal (optionnel)</label>
+                    <select id="classe-prof" class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucun --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-classe" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-classe" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="classe-btn-text">Créer</span>
+                        <i id="classe-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal : nouvelle matière -->
+    <div id="modal-matiere" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 id="modal-matiere-title" class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvelle matière</h3>
+            <div id="matiere-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="matiere-error-msg"></span>
+            </div>
+            <input type="hidden" id="matiere-id">
+            <form id="form-matiere" novalidate>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Nom</label>
+                    <input id="matiere-nom" type="text" required maxlength="100" placeholder="ex: Mathématiques"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-matiere" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-matiere" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="matiere-btn-text">Créer</span>
+                        <i id="matiere-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal : nouvelle salle -->
+    <div id="modal-salle" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvelle salle</h3>
+            <div id="salle-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="salle-error-msg"></span>
+            </div>
+            <form id="form-salle" novalidate>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Nom</label>
+                    <input id="salle-nom" type="text" required maxlength="100" placeholder="ex: A101, Labo Info"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-salle" class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+                    <button type="submit" id="btn-submit-salle" class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span>Créer</span>
+                        <i id="salle-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal : nouvel utilisateur -->
+    <div id="modal-create" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Nouvel utilisateur</h3>
+            <div id="create-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="create-error-msg"></span>
+            </div>
+            <form id="form-create" novalidate>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Nom</label>
+                    <input id="create-nom" type="text" required
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Prénom</label>
+                    <input id="create-prenom" type="text" required
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Type</label>
+                    <select id="create-type" required
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Choisir --</option>
+                        <option value="administrateur">Administrateur</option>
+                        <option value="employé">Employé</option>
+                        <option value="élève">Élève</option>
+                        <option value="parent">Parent</option>
+                    </select>
+                </div>
+
+                <!-- Section classe (apparaît si type = élève) -->
+                <div id="create-classe-section" class="hidden mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="create-classe"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
+                </div>
+
+                <!-- Section prof (apparaît si type = employé) -->
+                <div id="create-prof-section" class="hidden mb-3 border border-indigo-100 rounded-xl p-3 bg-indigo-50/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-indigo-900 uppercase tracking-widest">Professeur</label>
+                        <button type="button" id="create-prof-toggle"
+                            class="relative inline-flex w-10 h-5 rounded-full bg-slate-300 transition-colors focus:outline-none">
+                            <span id="create-prof-thumb" class="inline-block w-4 h-4 bg-white rounded-full shadow absolute top-0.5 transition-transform" style="transform:translateX(2px)"></span>
+                        </button>
+                    </div>
+                    <div id="create-matieres-section" class="hidden mt-2">
+                        <label class="block text-xs font-semibold text-indigo-700 mb-1">Matieres enseignees</label>
+                        <div id="create-matieres-checkboxes" class="flex flex-wrap gap-2 max-h-28 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <div class="mb-2"></div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-create"
+                        class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">
+                        Annuler
+                    </button>
+                    <button type="submit" id="btn-submit-create"
+                        class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="create-btn-text">Créer</span>
+                        <i id="create-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal : token setup -->
+    <div id="modal-token" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-md p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
+                    <i class="fa-solid fa-check text-green-600 text-sm"></i>
+                </div>
+                <h3 class="text-lg font-bold text-indigo-900">Compte créé</h3>
+            </div>
+            <p class="text-xs text-slate-500 mb-1">Mail interne généré :</p>
+            <p id="token-mail" class="text-sm font-semibold text-indigo-900 mb-4"></p>
+            <p class="text-xs text-slate-500 mb-1">Transmettez ce lien à l'utilisateur pour qu'il définisse son mot de passe (valable 48h) :</p>
+            <div class="flex gap-2 mt-2">
+                <input id="token-value" readonly
+                    class="flex-1 px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-xs font-mono focus:outline-none select-all">
+                <button id="btn-copy-token"
+                    class="px-3 py-2 bg-indigo-900 text-white text-xs rounded-lg hover:bg-indigo-800 transition flex items-center gap-1.5">
+                    <i class="fa-regular fa-copy"></i> Copier
+                </button>
+            </div>
+            <button id="btn-close-token"
+                class="mt-5 w-full px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">
+                Fermer
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal : modifier utilisateur -->
+    <div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div class="bg-white/80 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold text-indigo-900 uppercase tracking-widest mb-4">Modifier le compte</h3>
+            <div id="edit-error" class="hidden mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i><span id="edit-error-msg"></span>
+            </div>
+            <form id="form-edit" novalidate>
+                <input type="hidden" id="edit-user-id">
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Nom</label>
+                    <input id="edit-nom" type="text"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Prénom</label>
+                    <input id="edit-prenom" type="text"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Type</label>
+                    <select id="edit-type"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="administrateur">Administrateur</option>
+                        <option value="employé">Employé</option>
+                        <option value="élève">Élève</option>
+                        <option value="parent">Parent</option>
+                    </select>
+                </div>
+                <div class="mb-5 flex items-center justify-between">
+                    <label class="text-xs font-bold text-indigo-900 uppercase tracking-widest">Compte actif</label>
+                    <button type="button" id="edit-active-toggle"
+                        class="relative inline-flex w-10 h-5 rounded-full transition-colors focus:outline-none">
+                        <span id="edit-active-thumb" class="inline-block w-4 h-4 bg-white rounded-full shadow absolute top-0.5 transition-transform"></span>
+                    </button>
+                </div>
+
+                <!-- Section classe (élève uniquement) -->
+                <div id="edit-classe-section" class="hidden mb-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Classe</label>
+                    <select id="edit-classe"
+                        class="w-full px-3 py-2 bg-white/70 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Aucune --</option>
+                    </select>
+                </div>
+
+                <!-- Section prof (employé uniquement) -->
+                <div id="prof-section" class="hidden mb-4 border-t border-slate-200 pt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-indigo-900 uppercase tracking-widest">Statut professeur</label>
+                        <button type="button" id="btn-toggle-prof"
+                            class="text-xs font-semibold px-3 py-1 rounded-lg transition"></button>
+                    </div>
+                    <div id="prof-matieres-section" class="hidden mt-2">
+                        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-widest mb-1">Matieres enseignees</label>
+                        <div id="matieres-checkboxes" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto"></div>
+                        <button type="button" id="btn-save-matieres"
+                            class="mt-2 text-xs font-semibold px-3 py-1 bg-indigo-900 text-white rounded-lg hover:bg-indigo-800 transition">
+                            Enregistrer les matieres
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-edit"
+                        class="flex-1 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition">
+                        Annuler
+                    </button>
+                    <button type="submit" id="btn-submit-edit"
+                        class="flex-1 bg-indigo-900 text-white text-sm font-bold py-2 rounded-lg hover:bg-indigo-800 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                        <span id="edit-btn-text">Enregistrer</span>
+                        <i id="edit-spinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ---- État ----
+        let currentUserId = null;
+        let editIsActive = true;
+        let users = [];
+
+        // ---- Utilitaires ----
+        function showError(msg) {
+            document.getElementById('error-message').textContent = msg;
+            document.getElementById('error-banner').classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error-banner').classList.add('hidden');
+        }
+
+        const TYPE_LABELS = {
+            'administrateur': { label: 'Administrateur', cls: 'bg-purple-100 text-purple-800' },
+            'employé':        { label: 'Employé',        cls: 'bg-blue-100 text-blue-800' },
+            'élève':          { label: 'Élève',          cls: 'bg-green-100 text-green-800' },
+            'parent':         { label: 'Parent',         cls: 'bg-orange-100 text-orange-800' },
+        };
+
+        function typeBadge(type) {
+            const t = TYPE_LABELS[type] || { label: type, cls: 'bg-slate-100 text-slate-700' };
+            return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${t.cls}">${t.label}</span>`;
+        }
+
+        // ---- Chargement utilisateurs ----
+        async function loadUsers() {
+            hideError();
+            const tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-xs">
+                <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Chargement...</td></tr>`;
+
+            const search = document.getElementById('search-input').value.trim();
+            const type = document.getElementById('type-filter').value;
+
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            if (type) params.set('type', type);
+
+            try {
+                const res = await fetch('/admin/users?' + params.toString());
+                if (res.status === 403) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-500 text-xs">
+                        Accès refusé.</td></tr>`;
+                    return;
+                }
+                if (!res.ok) throw new Error('Erreur serveur');
+
+                users = await res.json();
+                renderUsers(users);
+            } catch {
+                showError('Impossible de charger les utilisateurs.');
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-xs">
+                    Aucune donnée disponible.</td></tr>`;
+            }
+        }
+
+        function renderUsers(list) {
+            const tbody = document.getElementById('users-tbody');
+            document.getElementById('users-count').textContent =
+                list.length > 0 ? `${list.length} utilisateur${list.length > 1 ? 's' : ''}` : '';
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-xs">
+                    Aucun utilisateur trouvé.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(u => `
+                <tr class="border-t border-white/40 hover:bg-white/20 transition" data-id="${u.id}">
+                    <td class="px-4 py-3 font-semibold">${escHtml(u.nom)}</td>
+                    <td class="px-4 py-3">${escHtml(u.prenom)}</td>
+                    <td class="px-4 py-3 text-slate-500 text-xs font-mono">${escHtml(u.username)}</td>
+                    <td class="px-4 py-3">${typeBadge(u.type)}</td>
+                    <td class="px-4 py-3">
+                        ${u.is_active
+                            ? '<span class="flex items-center gap-1 text-green-600 text-xs font-semibold"><i class="fa-solid fa-circle text-[8px]"></i> Actif</span>'
+                            : '<span class="flex items-center gap-1 text-slate-400 text-xs font-semibold"><i class="fa-solid fa-circle text-[8px]"></i> Désactivé</span>'
+                        }
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <button class="btn-edit text-xs text-indigo-700 hover:text-indigo-900 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition mr-1"
+                            data-id="${u.id}">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i>Modifier
+                        </button>
+                        <button class="btn-delete text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                            data-id="${u.id}" data-nom="${escHtml(u.nom)}" data-prenom="${escHtml(u.prenom)}">
+                            <i class="fa-solid fa-trash mr-1"></i>Supprimer
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            tbody.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', () => openEditModal(parseInt(btn.dataset.id)));
+            });
+            tbody.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', () => deleteUser(
+                    parseInt(btn.dataset.id),
+                    btn.dataset.nom + ' ' + btn.dataset.prenom
+                ));
+            });
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // ---- Filtres ----
+        let searchTimeout;
+        document.getElementById('search-input').addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadUsers, 300);
+        });
+        document.getElementById('type-filter').addEventListener('change', loadUsers);
+        document.getElementById('btn-refresh').addEventListener('click', loadUsers);
+
+        // ---- Modal créer ----
+        let createIsProf = false;
+
+        document.getElementById('btn-new-user').addEventListener('click', () => {
+            document.getElementById('form-create').reset();
+            document.getElementById('create-error').classList.add('hidden');
+            document.getElementById('create-prof-section').classList.add('hidden');
+            document.getElementById('create-matieres-section').classList.add('hidden');
+            document.getElementById('create-classe-section').classList.add('hidden');
+            createIsProf = false;
+            updateCreateProfToggle();
+            document.getElementById('modal-create').classList.remove('hidden');
+        });
+
+        document.getElementById('create-type').addEventListener('change', async (e) => {
+            const profSection = document.getElementById('create-prof-section');
+            const classeSection = document.getElementById('create-classe-section');
+            if (e.target.value === 'employé') {
+                profSection.classList.remove('hidden');
+                classeSection.classList.add('hidden');
+                if (allMatieres.length === 0) {
+                    try {
+                        const r = await fetch('/edt/matieres');
+                        if (r.ok) allMatieres = await r.json();
+                    } catch {}
+                }
+            } else if (e.target.value === 'élève') {
+                profSection.classList.add('hidden');
+                createIsProf = false;
+                updateCreateProfToggle();
+                classeSection.classList.remove('hidden');
+                await populateClasseSelect('create-classe');
+            } else {
+                profSection.classList.add('hidden');
+                classeSection.classList.add('hidden');
+                createIsProf = false;
+                updateCreateProfToggle();
+            }
+        });
+
+        document.getElementById('create-prof-toggle').addEventListener('click', () => {
+            createIsProf = !createIsProf;
+            updateCreateProfToggle();
+            const matSection = document.getElementById('create-matieres-section');
+            if (createIsProf) {
+                matSection.classList.remove('hidden');
+                const container = document.getElementById('create-matieres-checkboxes');
+                container.innerHTML = allMatieres.map(m => `
+                    <label class="flex items-center gap-1.5 text-xs bg-white px-2 py-1 rounded border border-slate-200 cursor-pointer hover:bg-indigo-50">
+                        <input type="checkbox" value="${m.id}" class="accent-indigo-600">
+                        ${escHtml(m.nom)}
+                    </label>
+                `).join('');
+            } else {
+                matSection.classList.add('hidden');
+            }
+        });
+
+        function updateCreateProfToggle() {
+            const btn = document.getElementById('create-prof-toggle');
+            const thumb = document.getElementById('create-prof-thumb');
+            if (createIsProf) {
+                btn.classList.replace('bg-slate-300', 'bg-green-500');
+                thumb.style.transform = 'translateX(20px)';
+            } else {
+                btn.classList.replace('bg-green-500', 'bg-slate-300');
+                thumb.style.transform = 'translateX(2px)';
+            }
+        }
+
+        document.getElementById('btn-cancel-create').addEventListener('click', () => {
+            document.getElementById('modal-create').classList.add('hidden');
+        });
+
+        document.getElementById('form-create').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nom = document.getElementById('create-nom').value.trim();
+            const prenom = document.getElementById('create-prenom').value.trim();
+            const type = document.getElementById('create-type').value;
+            const classeVal = document.getElementById('create-classe').value;
+            const id_classe = type === 'élève' && classeVal ? parseInt(classeVal) : null;
+
+            const errEl = document.getElementById('create-error');
+            const errMsg = document.getElementById('create-error-msg');
+
+            if (!nom || !prenom || !type) {
+                errMsg.textContent = 'Tous les champs sont requis.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit-create');
+            const spinner = document.getElementById('create-spinner');
+            const btnText = document.getElementById('create-btn-text');
+
+            submitBtn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Création...';
+            errEl.classList.add('hidden');
+
+            try {
+                const res = await fetch('/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nom, prenom, type, id_classe })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errMsg.textContent = data.error || 'Erreur lors de la création.';
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+
+                // Si prof coché, on enchaîne les appels
+                if (createIsProf && data.id) {
+                    await fetch(`/admin/users/${data.id}/set-prof`, { method: 'POST' });
+                    const matIds = [...document.querySelectorAll('#create-matieres-checkboxes input:checked')]
+                        .map(i => parseInt(i.value));
+                    if (matIds.length > 0) {
+                        await fetch(`/admin/users/${data.id}/prof-matieres`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ matiere_ids: matIds }),
+                        });
+                    }
+                }
+
+                document.getElementById('modal-create').classList.add('hidden');
+                showTokenModal(data.mail_interne, data.setup_token);
+                loadUsers();
+            } catch {
+                errMsg.textContent = 'Impossible de joindre le serveur.';
+                errEl.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = 'Créer';
+            }
+        });
+
+        // ---- Modal token ----
+        function showTokenModal(mail, token) {
+            document.getElementById('token-mail').textContent = mail;
+            const setupUrl = window.location.origin + '/setup-password.html?token=' + encodeURIComponent(token);
+            document.getElementById('token-value').value = setupUrl;
+            document.getElementById('modal-token').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-copy-token').addEventListener('click', () => {
+            const input = document.getElementById('token-value');
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = document.getElementById('btn-copy-token');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copié';
+                setTimeout(() => { btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copier'; }, 2000);
+            });
+        });
+
+        document.getElementById('btn-close-token').addEventListener('click', () => {
+            document.getElementById('modal-token').classList.add('hidden');
+        });
+
+        // ---- Modal modifier ----
+        let allMatieres = [];
+        let allClasses = [];
+
+        async function populateClasseSelect(selectId, selectedId = null) {
+            if (allClasses.length === 0) {
+                try {
+                    const r = await fetch('/admin/classes');
+                    if (r.ok) allClasses = await r.json();
+                } catch {}
+            }
+            const sel = document.getElementById(selectId);
+            sel.innerHTML = '<option value="">-- Aucune --</option>' +
+                allClasses.map(c =>
+                    `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.niveau}${c.suffixe} (${c.annee})</option>`
+                ).join('');
+        }
+
+        async function openEditModal(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('edit-user-id').value = user.id;
+            document.getElementById('edit-nom').value = user.nom;
+            document.getElementById('edit-prenom').value = user.prenom;
+            document.getElementById('edit-type').value = user.type;
+            document.getElementById('edit-error').classList.add('hidden');
+            document.getElementById('prof-matieres-section').classList.add('hidden');
+
+            editIsActive = user.is_active;
+            updateToggle();
+
+            const profSection = document.getElementById('prof-section');
+            const classeSection = document.getElementById('edit-classe-section');
+            if (user.type === 'employé') {
+                profSection.classList.remove('hidden');
+                classeSection.classList.add('hidden');
+                await loadProfStatus(userId);
+            } else if (user.type === 'élève') {
+                profSection.classList.add('hidden');
+                classeSection.classList.remove('hidden');
+                await populateClasseSelect('edit-classe', user.id_classe);
+            } else {
+                profSection.classList.add('hidden');
+                classeSection.classList.add('hidden');
+            }
+
+            document.getElementById('modal-edit').classList.remove('hidden');
+        }
+
+        async function loadProfStatus(userId) {
+            const btn = document.getElementById('btn-toggle-prof');
+            btn.textContent = '...';
+            try {
+                const res = await fetch(`/admin/users/${userId}/prof-status`);
+                const data = await res.json();
+                updateProfButton(userId, data.is_prof);
+
+                if (data.is_prof) {
+                    await loadMatiereCheckboxes(userId, data.matieres);
+                    document.getElementById('prof-matieres-section').classList.remove('hidden');
+                }
+            } catch {
+                btn.textContent = 'Erreur';
+            }
+        }
+
+        function updateProfButton(userId, isProf) {
+            const btn = document.getElementById('btn-toggle-prof');
+            if (isProf) {
+                btn.textContent = 'Retirer statut prof';
+                btn.className = 'text-xs font-semibold px-3 py-1 rounded-lg transition bg-red-100 text-red-700 hover:bg-red-200';
+                btn.onclick = () => toggleProf(userId, false);
+            } else {
+                btn.textContent = 'Definir comme prof';
+                btn.className = 'text-xs font-semibold px-3 py-1 rounded-lg transition bg-green-100 text-green-700 hover:bg-green-200';
+                btn.onclick = () => toggleProf(userId, true);
+            }
+        }
+
+        async function toggleProf(userId, promote) {
+            const method = promote ? 'POST' : 'DELETE';
+            const res = await fetch(`/admin/users/${userId}/set-prof`, { method });
+            if (res.ok) {
+                const matiereSection = document.getElementById('prof-matieres-section');
+                updateProfButton(userId, promote);
+                if (promote) {
+                    await loadMatiereCheckboxes(userId, []);
+                    matiereSection.classList.remove('hidden');
+                } else {
+                    matiereSection.classList.add('hidden');
+                }
+            }
+        }
+
+        async function loadMatiereCheckboxes(userId, selected) {
+            if (allMatieres.length === 0) {
+                try {
+                    const res = await fetch('/edt/matieres');
+                    if (res.ok) allMatieres = await res.json();
+                } catch {}
+            }
+
+            const selectedIds = new Set(selected.map(m => m.id));
+            const container = document.getElementById('matieres-checkboxes');
+            container.innerHTML = allMatieres.map(m => `
+                <label class="flex items-center gap-1.5 text-xs bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-indigo-50">
+                    <input type="checkbox" value="${m.id}" ${selectedIds.has(m.id) ? 'checked' : ''}
+                        class="accent-indigo-600">
+                    ${escHtml(m.nom)}
+                </label>
+            `).join('');
+
+            document.getElementById('btn-save-matieres').onclick = () => saveMatieres(userId);
+        }
+
+        async function saveMatieres(userId) {
+            const checked = [...document.querySelectorAll('#matieres-checkboxes input:checked')]
+                .map(i => parseInt(i.value));
+            const res = await fetch(`/admin/users/${userId}/prof-matieres`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ matiere_ids: checked }),
+            });
+            if (res.ok) {
+                const btn = document.getElementById('btn-save-matieres');
+                btn.textContent = 'Enregistre !';
+                setTimeout(() => { btn.textContent = 'Enregistrer les matieres'; }, 1500);
+            }
+        }
+
+        function updateToggle() {
+            const toggle = document.getElementById('edit-active-toggle');
+            const thumb = document.getElementById('edit-active-thumb');
+            if (editIsActive) {
+                toggle.classList.add('bg-green-500');
+                toggle.classList.remove('bg-slate-300');
+                thumb.style.transform = 'translateX(20px)';
+            } else {
+                toggle.classList.remove('bg-green-500');
+                toggle.classList.add('bg-slate-300');
+                thumb.style.transform = 'translateX(2px)';
+            }
+        }
+
+        document.getElementById('edit-active-toggle').addEventListener('click', () => {
+            editIsActive = !editIsActive;
+            updateToggle();
+        });
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+            document.getElementById('modal-edit').classList.add('hidden');
+        });
+
+        document.getElementById('form-edit').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('edit-user-id').value;
+            const nom = document.getElementById('edit-nom').value.trim();
+            const prenom = document.getElementById('edit-prenom').value.trim();
+            const type = document.getElementById('edit-type').value;
+            const classeVal = document.getElementById('edit-classe').value;
+            const id_classe = type === 'élève' && classeVal ? parseInt(classeVal) : null;
+
+            const errEl = document.getElementById('edit-error');
+            const errMsg = document.getElementById('edit-error-msg');
+
+            if (!nom || !prenom) {
+                errMsg.textContent = 'Nom et prénom sont requis.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit-edit');
+            const spinner = document.getElementById('edit-spinner');
+            const btnText = document.getElementById('edit-btn-text');
+
+            submitBtn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Enregistrement...';
+            errEl.classList.add('hidden');
+
+            const payload = { nom, prenom, type, is_active: editIsActive };
+            if (type === 'élève') payload.id_classe = id_classe;
+
+            try {
+                const res = await fetch(`/admin/users/${userId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errMsg.textContent = data.error || 'Erreur lors de la modification.';
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('modal-edit').classList.add('hidden');
+                loadUsers();
+            } catch {
+                errMsg.textContent = 'Impossible de joindre le serveur.';
+                errEl.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = 'Enregistrer';
+            }
+        });
+
+        // ---- Supprimer ----
+        async function deleteUser(userId, fullName) {
+            if (!confirm(`Supprimer définitivement le compte de ${fullName} ?`)) return;
+
+            try {
+                const res = await fetch(`/admin/users/${userId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) {
+                    showError(data.error || 'Erreur lors de la suppression.');
+                    return;
+                }
+                loadUsers();
+            } catch {
+                showError('Impossible de joindre le serveur.');
+            }
+        }
+
+        // ---- Vérification rôle admin ----
+        async function checkRole() {
+            const res = await fetch('/auth/me');
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.type !== 'administrateur') {
+                window.location.replace('/');
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                    NAVIGATION TABS                           ║
+        // ════════════════════════════════════════════════════════════════
+
+        const SECTIONS = ['comptes', 'classes', 'matieres', 'salles'];
+        const sectionLoaded = {};
+
+        function switchTab(tab) {
+            SECTIONS.forEach(s => {
+                document.getElementById(`section-${s}`).classList.toggle('hidden', s !== tab);
+            });
+            document.querySelectorAll('.admin-tab').forEach(btn => {
+                const active = btn.dataset.tab === tab;
+                btn.classList.toggle('text-indigo-900', active);
+                btn.classList.toggle('border-indigo-900', active);
+                btn.classList.toggle('text-slate-500', !active);
+                btn.classList.toggle('border-transparent', !active);
+            });
+            if (!sectionLoaded[tab]) {
+                sectionLoaded[tab] = true;
+                if (tab === 'classes') { loadClasses(); loadProfsForSelect(); }
+                if (tab === 'matieres') loadMatieres();
+                if (tab === 'salles') loadSalles();
+            }
+        }
+
+        document.querySelectorAll('.admin-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                      CLASSES                                 ║
+        // ════════════════════════════════════════════════════════════════
+
+        async function loadClasses() {
+            const tbody = document.getElementById('classes-tbody');
+            try {
+                const res = await fetch('/admin/classes');
+                const data = await res.json();
+                if (!res.ok) { tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-500 text-xs">${data.error}</td></tr>`; return; }
+                if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-400 text-xs">Aucune classe</td></tr>'; return; }
+                tbody.innerHTML = data.map(c => `
+                    <tr class="border-b border-white/40 hover:bg-white/20 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-800">${c.niveau}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${c.suffixe || '-'}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${c.annee}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${c.prof_principal ? `${c.prof_principal.prenom} ${c.prof_principal.nom}` : '-'}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="openEditClasse(${c.id})" class="text-xs text-indigo-600 hover:text-indigo-900 font-semibold mr-3">Modifier</button>
+                            <button onclick="deleteClasse(${c.id})" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
+            } catch { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-red-400 text-xs">Erreur de connexion</td></tr>'; }
+        }
+
+        let profsCache = [];
+        async function loadProfsForSelect() {
+            const res = await fetch('/edt/profs').catch(() => null);
+            if (!res || !res.ok) return;
+            profsCache = await res.json();
+            const sel = document.getElementById('classe-prof');
+            sel.innerHTML = '<option value="">-- Aucun --</option>' + profsCache.map(p => `<option value="${p.id}">${p.prenom} ${p.nom}</option>`).join('');
+        }
+
+        let editingClasseId = null;
+
+        function openNewClasse() {
+            editingClasseId = null;
+            document.getElementById('classe-id').value = '';
+            document.getElementById('form-classe').reset();
+            document.getElementById('modal-classe-title').textContent = 'Nouvelle classe';
+            document.getElementById('classe-btn-text').textContent = 'Créer';
+            document.getElementById('classe-error').classList.add('hidden');
+            document.getElementById('classe-annee').value = new Date().getFullYear();
+            document.getElementById('modal-classe').classList.remove('hidden');
+        }
+
+        async function openEditClasse(id) {
+            const res = await fetch('/admin/classes');
+            if (!res.ok) return;
+            const classes = await res.json();
+            const c = classes.find(x => x.id === id);
+            if (!c) return;
+            editingClasseId = id;
+            document.getElementById('classe-id').value = id;
+            document.getElementById('classe-niveau').value = c.niveau;
+            document.getElementById('classe-suffixe').value = c.suffixe || '';
+            document.getElementById('classe-annee').value = c.annee;
+            document.getElementById('classe-prof').value = c.prof_principal?.id || '';
+            document.getElementById('modal-classe-title').textContent = 'Modifier la classe';
+            document.getElementById('classe-btn-text').textContent = 'Enregistrer';
+            document.getElementById('classe-error').classList.add('hidden');
+            document.getElementById('modal-classe').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-new-classe').addEventListener('click', openNewClasse);
+        document.getElementById('btn-cancel-classe').addEventListener('click', () => document.getElementById('modal-classe').classList.add('hidden'));
+
+        document.getElementById('form-classe').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('classe-error');
+            const errMsg = document.getElementById('classe-error-msg');
+            errEl.classList.add('hidden');
+
+            const niveau = parseInt(document.getElementById('classe-niveau').value);
+            const suffixe = document.getElementById('classe-suffixe').value.trim();
+            const annee = parseInt(document.getElementById('classe-annee').value);
+            const id_prof_principal = parseInt(document.getElementById('classe-prof').value) || null;
+
+            if (!niveau || !annee) { errMsg.textContent = 'Niveau et année sont requis.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btn-submit-classe');
+            const spinner = document.getElementById('classe-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            try {
+                const url = editingClasseId ? `/admin/classes/${editingClasseId}` : '/admin/classes';
+                const method = editingClasseId ? 'PATCH' : 'POST';
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niveau, suffixe, annee, id_prof_principal }) });
+                const data = await res.json();
+                if (!res.ok) { errMsg.textContent = data.error || 'Erreur serveur.'; errEl.classList.remove('hidden'); return; }
+                document.getElementById('modal-classe').classList.add('hidden');
+                loadClasses();
+            } catch { errMsg.textContent = 'Impossible de joindre le serveur.'; errEl.classList.remove('hidden'); }
+            finally { btn.disabled = false; spinner.classList.add('hidden'); }
+        });
+
+        async function deleteClasse(id) {
+            if (!confirm('Supprimer cette classe ?')) return;
+            const res = await fetch(`/admin/classes/${id}`, { method: 'DELETE' });
+            if (res.ok) { loadClasses(); } else { const d = await res.json(); alert(d.error || 'Erreur'); }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                      MATIÈRES                                ║
+        // ════════════════════════════════════════════════════════════════
+
+        async function loadMatieres() {
+            const tbody = document.getElementById('matieres-tbody');
+            try {
+                const res = await fetch('/admin/matieres');
+                const data = await res.json();
+                if (!res.ok) { tbody.innerHTML = `<tr><td colspan="2" class="px-4 py-6 text-center text-red-500 text-xs">${data.error}</td></tr>`; return; }
+                if (!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-slate-400 text-xs">Aucune matière</td></tr>'; return; }
+                tbody.innerHTML = data.map(m => `
+                    <tr class="border-b border-white/40 hover:bg-white/20 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-800">${escHtml(m.nom)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="openEditMatiere(${m.id}, '${escAttr(m.nom)}')" class="text-xs text-indigo-600 hover:text-indigo-900 font-semibold mr-3">Modifier</button>
+                            <button onclick="deleteMatiere(${m.id})" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
+            } catch { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-red-400 text-xs">Erreur de connexion</td></tr>'; }
+        }
+
+        function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function escAttr(s) { return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
+        let editingMatiereId = null;
+
+        function openNewMatiere() {
+            editingMatiereId = null;
+            document.getElementById('matiere-id').value = '';
+            document.getElementById('matiere-nom').value = '';
+            document.getElementById('modal-matiere-title').textContent = 'Nouvelle matière';
+            document.getElementById('matiere-btn-text').textContent = 'Créer';
+            document.getElementById('matiere-error').classList.add('hidden');
+            document.getElementById('modal-matiere').classList.remove('hidden');
+        }
+
+        function openEditMatiere(id, nom) {
+            editingMatiereId = id;
+            document.getElementById('matiere-id').value = id;
+            document.getElementById('matiere-nom').value = nom;
+            document.getElementById('modal-matiere-title').textContent = 'Modifier la matière';
+            document.getElementById('matiere-btn-text').textContent = 'Enregistrer';
+            document.getElementById('matiere-error').classList.add('hidden');
+            document.getElementById('modal-matiere').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-new-matiere').addEventListener('click', openNewMatiere);
+        document.getElementById('btn-cancel-matiere').addEventListener('click', () => document.getElementById('modal-matiere').classList.add('hidden'));
+
+        document.getElementById('form-matiere').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('matiere-error');
+            const errMsg = document.getElementById('matiere-error-msg');
+            errEl.classList.add('hidden');
+
+            const nom = document.getElementById('matiere-nom').value.trim();
+            if (!nom) { errMsg.textContent = 'Nom requis.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btn-submit-matiere');
+            const spinner = document.getElementById('matiere-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            try {
+                const url = editingMatiereId ? `/admin/matieres/${editingMatiereId}` : '/admin/matieres';
+                const method = editingMatiereId ? 'PATCH' : 'POST';
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom }) });
+                const data = await res.json();
+                if (!res.ok) { errMsg.textContent = data.error || 'Erreur serveur.'; errEl.classList.remove('hidden'); return; }
+                document.getElementById('modal-matiere').classList.add('hidden');
+                loadMatieres();
+            } catch { errMsg.textContent = 'Impossible de joindre le serveur.'; errEl.classList.remove('hidden'); }
+            finally { btn.disabled = false; spinner.classList.add('hidden'); }
+        });
+
+        async function deleteMatiere(id) {
+            if (!confirm('Supprimer cette matière ?')) return;
+            const res = await fetch(`/admin/matieres/${id}`, { method: 'DELETE' });
+            if (res.ok) { loadMatieres(); } else { const d = await res.json(); alert(d.error || 'Erreur'); }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // ║                       SALLES                                 ║
+        // ════════════════════════════════════════════════════════════════
+
+        async function loadSalles() {
+            const tbody = document.getElementById('salles-tbody');
+            try {
+                const res = await fetch('/admin/salles');
+                const data = await res.json();
+                if (!res.ok) { tbody.innerHTML = `<tr><td colspan="2" class="px-4 py-6 text-center text-red-500 text-xs">${data.error}</td></tr>`; return; }
+                if (!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-slate-400 text-xs">Aucune salle</td></tr>'; return; }
+                tbody.innerHTML = data.map(s => `
+                    <tr class="border-b border-white/40 hover:bg-white/20 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-800">${escHtml(s.nom)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="deleteSalle(${s.id})" class="text-xs text-red-500 hover:text-red-700 font-semibold">Supprimer</button>
+                        </td>
+                    </tr>`).join('');
+            } catch { tbody.innerHTML = '<tr><td colspan="2" class="px-4 py-6 text-center text-red-400 text-xs">Erreur de connexion</td></tr>'; }
+        }
+
+        document.getElementById('btn-new-salle').addEventListener('click', () => {
+            document.getElementById('salle-nom').value = '';
+            document.getElementById('salle-error').classList.add('hidden');
+            document.getElementById('modal-salle').classList.remove('hidden');
+        });
+        document.getElementById('btn-cancel-salle').addEventListener('click', () => document.getElementById('modal-salle').classList.add('hidden'));
+
+        document.getElementById('form-salle').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('salle-error');
+            const errMsg = document.getElementById('salle-error-msg');
+            errEl.classList.add('hidden');
+
+            const nom = document.getElementById('salle-nom').value.trim();
+            if (!nom) { errMsg.textContent = 'Nom requis.'; errEl.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btn-submit-salle');
+            const spinner = document.getElementById('salle-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/admin/salles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom }) });
+                const data = await res.json();
+                if (!res.ok) { errMsg.textContent = data.error || 'Erreur serveur.'; errEl.classList.remove('hidden'); return; }
+                document.getElementById('modal-salle').classList.add('hidden');
+                loadSalles();
+            } catch { errMsg.textContent = 'Impossible de joindre le serveur.'; errEl.classList.remove('hidden'); }
+            finally { btn.disabled = false; spinner.classList.add('hidden'); }
+        });
+
+        async function deleteSalle(id) {
+            if (!confirm('Supprimer cette salle ?')) return;
+            const res = await fetch(`/admin/salles/${id}`, { method: 'DELETE' });
+            if (res.ok) { loadSalles(); } else { const d = await res.json(); alert(d.error || 'Erreur'); }
+        }
+
+        // ---- Init ----
+        checkRole();
+        loadUsers();
+    </script>
+</body>
+</html>

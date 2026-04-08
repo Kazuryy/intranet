@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Site Web - Grille Uniforme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <script>
+        document.addEventListener('auth-ready', (e) => {
+            const type = e.detail.type;
+            if (type === 'administrateur') {
+                window.location.replace('/admin');
+            } else if (type === 'employé') {
+                window.location.replace('/edt');
+            }
+        });
+    </script>
+    <script src="header.js" defer></script>
+    <script src="user-menu.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body class="m-0 font-sans text-slate-800">
+
+    <div class="relative z-10 flex flex-col items-center h-[95vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-6">
+        
+        <div class="w-[80%] h-[45%] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-2xl flex p-[0.5%] gap-0">
+
+            <div class="flex flex-col w-8 shrink-0 mr-1">
+                <div class="h-[40px] shrink-0"></div>
+                <div class="flex-1 flex flex-col">
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">8H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">9H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">10H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">11H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">12H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">13H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">14H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">15H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">16H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">17H</span></div><div class="flex-1"></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex-1 flex items-start justify-end pr-1"><span class="text-[9px] text-slate-400 font-medium leading-none mt-0.5">18H</span></div><div class="flex-1"></div></div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex gap-[0.5%]">
+                <div class="jour-container" data-jour="lundi" data-index="1">
+                    <div class="en-tete-jour"><span class="jour-nom">LUNDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-lundi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="mardi" data-index="2">
+                    <div class="en-tete-jour"><span class="jour-nom">MARDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-mardi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="mercredi" data-index="3">
+                    <div class="en-tete-jour"><span class="jour-nom">MERCREDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-mercredi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="jeudi" data-index="4">
+                    <div class="en-tete-jour"><span class="jour-nom">JEUDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-jeudi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="vendredi" data-index="5">
+                    <div class="en-tete-jour"><span class="jour-nom">VENDREDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-vendredi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <div class="jour-container" data-jour="samedi" data-index="6">
+                    <div class="en-tete-jour"><span class="jour-nom">SAMEDI</span><span class="jour-date">--</span></div>
+                    <div class="flex-1 flex flex-col w-full relative">
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50 bg-slate-100/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col border-b border-slate-300/50"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div class="flex-1 flex flex-col"><div class="flex-1"></div><div class="h-px mx-[20%] bg-slate-200/70"></div><div class="flex-1"></div></div>
+                        <div id="sql-courses-container-samedi" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="w-[95%] h-[55%] flex flex-row gap-[1%]">
+            <div class="flex-1 h-full flex flex-row gap-[1%]">
+                <div class="flex-[3] bg-white shadow-md rounded-l-2xl flex flex-col hover:shadow-lg transition-shadow overflow-hidden">
+                    <div class="p-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between h-10">
+                        <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Dernières notes</h3>
+                        <button id="notes-eye-btn" class="text-xs cursor-pointer hover:scale-110 transition-transform text-indigo-700 flex-shrink-0">
+                            <i id="notes-eye-icon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="notes-list" class="flex-1 p-3 flex flex-col gap-3 overflow-y-auto">
+                    </div>
+                    
+                    <div class="p-1.5 border-t border-slate-100 flex justify-end">
+                        <a href="/notes" class="text-indigo-700 hover:text-indigo-900 hover:scale-105 transition-transform transition-colors text-sm inline-flex items-center gap-2" aria-label="Voir toutes les notes">
+                            <span class="text-[9px] font-medium">Toutes les notes</span>
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="flex-[5] bg-white shadow-md rounded-r-2xl flex flex-col hover:shadow-lg transition-shadow overflow-hidden">
+                    <div class="p-2 border-b border-slate-100 bg-slate-50/50 h-10 flex items-center">
+                        <h3 class="text-[10px] font-bold text-indigo-900 uppercase tracking-widest">Cahier de textes</h3>
+                    </div>
+                    
+                    <div id="travail-list" class="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
+                    </div>
+                    
+                    <div class="p-1.5 border-t border-slate-100 flex justify-end">
+                        <a href="travail.html" class="text-indigo-700 hover:text-indigo-900 hover:scale-105 transition-transform transition-colors text-sm inline-flex items-center gap-2" aria-label="Voir tous les travaux">
+                            <span class="text-[9px] font-medium">Tous les devoirs</span>
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        /* Tooltip */
+        .cours-tooltip {
+            display: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(100% + 6px);
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 10px;
+            line-height: 1.6;
+            white-space: nowrap;
+            z-index: 999; /* Très haut pour être au-dessus des lignes */
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        }
+        .cours-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(15, 23, 42, 0.95);
+        }
+        .cours-block:hover .cours-tooltip {
+            display: block;
+        }
+        .cours-block {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            overflow: visible; /* Important pour que le tooltip puisse sortir du bloc */
+            cursor: pointer;
+            transition: filter 0.15s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cours-block:hover {
+            filter: brightness(0.95);
+            z-index: 100; /* Passe au-dessus des autres cours */
+        }
+        .cours-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 4px;
+            overflow: hidden;
+        }
+        .cours-nom {
+            font-size: 9px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .jour-container {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .en-tete-jour {
+            height: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom-width: 1px;
+            border-radius: 0.75rem 0.75rem 0 0;
+            transition: colors 0.2s;
+            flex-shrink: 0;
+        }
+        
+        /* Checkbox styling */
+        .devoir-checkbox {
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+        
+        .devoir-checkbox:checked {
+            accent-color: #818cf8;
+        }
+    </style>
+
+    

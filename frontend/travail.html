@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travail à faire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <script src="header.js" defer></script>
+    <script src="user-menu.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body class="m-0 font-sans text-slate-800">
+
+    <div class="relative z-10 flex flex-col h-[90vh] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 p-[1%] gap-2" data-page="travail">
+
+        <!-- Barre de filtres -->
+        <div class="w-full bg-white shadow-md rounded-t-xl p-0">
+            <div class="flex items-center justify-between px-4 pt-3 pb-2 gap-4">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-base font-bold text-indigo-900">Travail à faire</h2>
+                    <button id="add-travail-btn" class="hidden px-3 py-1 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded transition-colors items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Ajouter</span>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 px-4 pb-3">
+                <div class="flex items-center gap-2">
+                    <button id="filter-a-faire-btn" class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded transition-colors">Travail à faire</button>
+                    <button id="filter-tout-btn" class="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded transition-colors">Tout voir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="w-full flex-1 flex gap-2 overflow-hidden">
+
+            <!-- Colonne gauche : catégories -->
+            <div class="flex-1 bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-bl-2xl overflow-hidden flex flex-col">
+                <div class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+                    <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-2">Catégories</h3>
+                    <button id="cat-tous-btn" class="px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors text-left">Tous les devoirs</button>
+                    <button id="cat-evaluation-btn" class="px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Évaluations</button>
+                    <button id="cat-rendu-btn" class="px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Avec rendu</button>
+                    <button id="cat-exercice-btn" class="px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 rounded transition-colors text-left">Exercices</button>
+                </div>
+            </div>
+
+            <!-- Colonne milieu : liste des devoirs -->
+            <div class="flex-[4] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg overflow-hidden flex flex-col">
+                <div id="travail-list" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+                    <div class="text-center text-slate-400 text-sm py-4">Chargement...</div>
+                </div>
+            </div>
+
+            <!-- Colonne droite : évaluations à venir -->
+            <div class="flex-[3] bg-white/40 backdrop-blur-md border border-white/60 shadow-lg rounded-br-2xl overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-white/40 bg-white/20">
+                    <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-widest">Évaluations à venir</h3>
+                </div>
+                <div id="evals-section" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+                    <!-- rempli par JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ajout devoir (visible uniquement pour les profs) -->
+    <div id="add-travail-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg">
+            <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
+                <h2 class="text-lg font-bold">Ajouter un devoir</h2>
+                <button id="close-modal-btn" class="text-white hover:text-indigo-100 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Classe</label>
+                    <select id="devoir-classe" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                        <option value="">-- Sélectionner une classe --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Matière</label>
+                    <select id="devoir-matiere" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                        <option value="">-- Sélectionner une matière --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Type</label>
+                    <select id="devoir-type" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                        <option value="exercice">Exercice</option>
+                        <option value="controle">Contrôle</option>
+                        <option value="expose">Exposé</option>
+                        <option value="projet">Projet</option>
+                        <option value="soutenance">Soutenance</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Consigne</label>
+                    <textarea id="devoir-consigne" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600" rows="3" placeholder="Description du travail..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Date limite</label>
+                    <input type="date" id="devoir-date-limite" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600">
+                </div>
+                <div id="modal-error" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg"></div>
+                <button id="create-devoir-btn" class="w-full px-4 py-2 bg-indigo-600 text-sm text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Créer le devoir
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
