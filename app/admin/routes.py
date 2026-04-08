@@ -5,7 +5,7 @@ from flask import request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from . import admin_bp
-from ..models import db, Batiment, Classe, Etage, Log, Matiere, Prof, Salle, User
+from ..models import db, Batiment, Classe, Eleve, Etage, Log, Matiere, Prof, Salle, User
 from ..decorators import is_direction, role_required
 
 
@@ -96,13 +96,20 @@ def list_users():
 
     users = query.order_by(User.nom, User.prenom).all()
 
+    eleve_ids = [u.id for u in users if u.type == 'élève']
+    eleve_map = {}
+    if eleve_ids:
+        eleves = Eleve.query.filter(Eleve.id_user.in_(eleve_ids)).all()
+        eleve_map = {e.id_user: e.id_classe for e in eleves}
+
     return jsonify([{
         'id': u.id,
         'nom': u.nom,
         'prenom': u.prenom,
         'username': u.username,
         'type': u.type,
-        'is_active': u.is_active
+        'is_active': u.is_active,
+        'id_classe': eleve_map.get(u.id) if u.type == 'élève' else None
     } for u in users]), 200
 
 
@@ -146,6 +153,11 @@ def create_user():
         db.session.add(user)
         try:
             db.session.flush()
+            if user_type == 'élève':
+                id_classe = data.get('id_classe') or None
+                if id_classe is not None:
+                    id_classe = int(id_classe)
+                db.session.add(Eleve(id_user=user.id, id_classe=id_classe))
             _log('user_created', target_id=user.id)
             db.session.commit()
             return jsonify({
@@ -207,6 +219,17 @@ def update_user(user_id):
             return jsonify({'error': 'is_active doit être un booléen'}), 400
         user.is_active = data['is_active']
         changes.append('is_active')
+
+    if 'id_classe' in data and user.type == 'élève':
+        id_classe = data['id_classe']
+        if id_classe is not None and not isinstance(id_classe, int):
+            return jsonify({'error': 'id_classe doit être un entier'}), 400
+        eleve = Eleve.query.filter_by(id_user=user.id).first()
+        if eleve is None:
+            db.session.add(Eleve(id_user=user.id, id_classe=id_classe))
+        else:
+            eleve.id_classe = id_classe
+        changes.append('id_classe')
 
     if not changes:
         return jsonify({'error': 'Aucun champ modifiable fourni'}), 400
